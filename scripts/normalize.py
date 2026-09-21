@@ -52,7 +52,7 @@ def load_rjudge():
                         lines.append(f"[TOOL OUTPUT] {str(m['content'])[:TOOL_OUT_CHARS]}")
             rid = f"rjudge_{domain}_{fname}_{x['id']:04d}"
             out.append(rec(rid, "r-judge", "\n".join(lines), x["label"] == 1,
-                           risk=f"{x.get('scenario')}/{x.get('attack_type')}", group=rid,
+                           risk=f"{x.get('scenario')}/{x.get('attack_type')}", group=f"rjudge_{domain}_{fname}",
                            meta={"domain": domain}))
     return out
 
