@@ -42,7 +42,7 @@
 
 \*"retokenized @end" = fraction of all attacked traces whose adversarial text still scores below threshold after decode→re-tokenize. For SHADE it's measured on the best state within 60 swaps. Raw per-trace records: `attack/*.jsonl`; aggregates: `attack/summary.json`, `results/cross_source_table.json`.
 
-**How deep do the flips go?** Not very, by construction: the search stops at the first crossing of p = 0.865. The median post-attack p for successes is 0.80–0.86. Only 0–37% of successes (by source/scope) happened to land below p = 0.5. A flip here means "the monitor's alarm no longer fires at its operating threshold", not "the monitor now believes the trace is benign". The threshold-0.5 sensitivity run in `cross_source_analysis.md` measures the harder target directly.
+**How deep do the flips go?** Not very, by construction: the search stops at the first crossing of p = 0.865. The median post-attack p for successes is 0.80–0.86. Only 0–37% of successes (by source/scope) happened to land below p = 0.5. A flip here means "the monitor's alarm no longer fires at its operating threshold", not "the monitor now believes the trace is benign". A rerun on the same targets with success defined as p < 0.5 (`cross_source_analysis.md`, last section) shows most flips can be pushed that far. At agent-text scope, 20 swaps reach p < 0.5 for 29% of InjecAgent, 90% of ToolEmu and 44% of R-Judge targets; with any-token edits, 86–100% of in-distribution targets and 20% (55% at 60 swaps) of SHADE targets get there.
 
 **Runtime:** ~1 s per substitution step on an A100 for 1–2-window traces, ~2 s for 15-window SHADE traces. Full sweep: ~24 min (in-distribution agent text), 9 min (any token), 37 min (SHADE agent text, 60-swap budget).
 
@@ -79,5 +79,5 @@ The reference point in the plan is that hand-crafted black-box tricks moved the 
 
 - Single attack method (greedy HotFlip with exact re-scoring); no fluency or perplexity constraint; no semantic-preservation check beyond the frozen-evidence rule.
 - Small n for R-Judge (9 attackable traces) and SHADE (20); Wilson 95% intervals are wide (see `cross_source_analysis.md`).
-- The attacked model is fine-tuning run 2; run 1 (whose attack results were lost with its VM) had a very different operating threshold (0.409). Attack success depends heavily on the threshold, since success means crossing it. The threshold-0.5 sensitivity run quantifies this for run 2.
+- The attacked model is fine-tuning run 2; run 1 (whose attack results were lost with its VM) had a very different operating threshold (0.409). Attack success depends heavily on the threshold, since success means crossing it. The threshold-0.5 sensitivity run (above) quantifies this for run 2: success rates drop but stay substantial, and the cross-source ordering doesn't change.
 - SHADE targets were limited to ≤25-window traces for runtime; longer traces are likely harder under the agent-text scope (more windows to push down).

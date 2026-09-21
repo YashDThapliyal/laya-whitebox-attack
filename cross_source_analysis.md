@@ -46,4 +46,17 @@ Structural properties of the attacked traces (medians):
 
 ## Threshold sensitivity (p = 0.5)
 
-_Pending — filled in from `attack/t05_*.jsonl` when the sensitivity runs finish._
+At a stricter bar, **p < 0.5**, the monitor has to actually lean "benign". The attack was rerun on the **same targets** (`attack/t05_*.jsonl`, `results/threshold05_sensitivity.json`). Success rates, with the 0.865-threshold rate in parentheses:
+
+| Source (n) | agent text @5 | agent text @10 | agent text @20 [95% CI] | any-token @5 | any-token @20 | retokenized, agent text / any |
+|---|---|---|---|---|---|---|
+| InjecAgent (87) | 0.01 | 0.14 | **0.29** [0.20, 0.39] (0.44) | 0.49 | **0.91** (1.00) | 0.26 / 0.82 |
+| ToolEmu (21) | 0.43 | 0.76 | **0.90** [0.71, 0.97] (0.90) | 0.43 | **0.86** (1.00) | 0.90 / 0.86 |
+| R-Judge (9) | 0.22 | 0.33 | **0.44** [0.19, 0.73] (0.89) | 0.67 | **1.00** (1.00) | 0.22 / 0.89 |
+| SHADE (20) | – | – | not run (0.10 at 0.865 already) | 0.00 | **0.20** (0.60); 0.55 at 60 swaps (0.75) | – / 0.30 |
+
+Reading:
+- **The flips are not all shallow.** Most in-distribution flips still reach p < 0.5, typically within 5–11 swaps, and 86–100% of flagged in-distribution traces can be pushed all the way to "benign" when any token may change.
+- **The cross-source ordering is unchanged.** At agent-text scope: ToolEmu > R-Judge > InjecAgent > SHADE, still unrelated to monitor quality.
+- **R-Judge drops the most** (0.89 → 0.44), and half of those deeper flips don't survive re-tokenization (0.22). On n = 9, that's the least reliable row.
+- **SHADE needs many more swaps** (median 36 with any-token edits) to reach p < 0.5, consistent with the many-windows explanation.

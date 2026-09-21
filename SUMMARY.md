@@ -26,7 +26,20 @@ Monitor = fine-tuned Laya (run 2). AUROC is on each source's existing held-out v
 
 **Two important qualifiers.** First, the edits are **not fluent**: HotFlip has no language-model constraint, and most successful edits are non-words. This bounds an unconstrained white-box attacker, not a stealthy agent writing natural prose. Second, **"success" means crossing p = 0.865, not convincing the monitor the trace is benign.** The threshold-0.5 sensitivity check:
 
-_THRESHOLD_0.5_PLACEHOLDER_
+At a stricter bar, **p < 0.5**, the monitor has to actually lean "benign". The attack was rerun on the **same targets** (`attack/t05_*.jsonl`, `results/threshold05_sensitivity.json`). Success rates, with the 0.865-threshold rate in parentheses:
+
+| Source (n) | agent text @5 | agent text @10 | agent text @20 [95% CI] | any-token @5 | any-token @20 | retokenized, agent text / any |
+|---|---|---|---|---|---|---|
+| InjecAgent (87) | 0.01 | 0.14 | **0.29** [0.20, 0.39] (0.44) | 0.49 | **0.91** (1.00) | 0.26 / 0.82 |
+| ToolEmu (21) | 0.43 | 0.76 | **0.90** [0.71, 0.97] (0.90) | 0.43 | **0.86** (1.00) | 0.90 / 0.86 |
+| R-Judge (9) | 0.22 | 0.33 | **0.44** [0.19, 0.73] (0.89) | 0.67 | **1.00** (1.00) | 0.22 / 0.89 |
+| SHADE (20) | – | – | not run (0.10 at 0.865 already) | 0.00 | **0.20** (0.60); 0.55 at 60 swaps (0.75) | – / 0.30 |
+
+Reading:
+- **The flips are not all shallow.** Most in-distribution flips still reach p < 0.5, typically within 5–11 swaps, and 86–100% of flagged in-distribution traces can be pushed all the way to "benign" when any token may change.
+- **The cross-source ordering is unchanged.** At agent-text scope: ToolEmu > R-Judge > InjecAgent > SHADE, still unrelated to monitor quality.
+- **R-Judge drops the most** (0.89 → 0.44), and half of those deeper flips don't survive re-tokenization (0.22). On n = 9, that's the least reliable row.
+- **SHADE needs many more swaps** (median 36 with any-token edits) to reach p < 0.5, consistent with the many-windows explanation.
 
 ## What was done
 
@@ -85,7 +98,7 @@ _THRESHOLD_0.5_PLACEHOLDER_
 - **01:04–01:46 · Phase 4, first attempt.** Stale processes caused a CUDA OOM, which I fixed. Then **the A100 VM was reclaimed server-side at ~01:46 and all in-flight attack results were lost**, because they weren't being synced. That was my mistake. I noticed only at ~02:14, when the user asked for status.
 - **02:14–02:30 · Recovery.** New A100 requests timed out client-side while the server allocated them, so I adopted the allocated VM. The 1.7 GB checkpoint wouldn't upload, so I retrained (run 2) and re-evaluated. From then on: `caffeinate`, a 3-minute result-sync watchdog, attack `--resume`, and `scripts/recover_colab.sh` (restores the exact model via 50 MB chunks).
 - **02:30–03:30 · Phase 4 rerun.** The user added Phase 4.5 at ~02:45. While preparing it I found an edit-scope bug that left ToolEmu almost un-attackable (the 96-token frozen prefix covered most of each ~100-token trace), fixed it, and restarted the in-distribution attacks. At 03:26 the CLI dropped its session record (likely token expiry), but the VM survived and was re-adopted; nothing was lost.
-- **03:30– · Phase 5 / 4.5 analysis, threshold-0.5 sensitivity runs on a fresh A100, write-up.**
+- **03:30–04:25 · Phase 5 / 4.5 analysis and write-up.** The threshold-0.5 sensitivity runs used a fresh A100: provisioning 03:40, exact run-2 weights restored via 50 MB chunks (checksum verified), runs finished 04:15, VM stopped.
 - **For next time:** sync results continuously from the start; don't rely on `colab new` returning; keep weights somewhere the VM can pull from (an HF private repo or GCS) instead of uploading through the Jupyter API; poll for failure states, not just for "done" files.
 
 ## File map
