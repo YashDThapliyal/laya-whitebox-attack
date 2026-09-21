@@ -50,6 +50,10 @@ p.add_argument("--max_minutes", type=float, default=90)
 p.add_argument("--out", default="attack/results_agent.jsonl")
 p.add_argument("--seed", type=int, default=0)
 p.add_argument("--threshold", type=float, default=None, help="override the calibrated decision threshold (sensitivity runs)")
+p.add_argument("--fluent_k", type=int, default=0,
+               help="fluency constraint: only consider the top-k MLM predictions at each position (0 = off)")
+p.add_argument("--mlm_id", default="answerdotai/ModernBERT-large", help="masked LM used for the fluency filter")
+p.add_argument("--mlm_ctx", type=int, default=128, help="tokens of context on each side of the masked position")
 p.add_argument("--resume", action="store_true", help="append to --out, skipping target ids already in it")
 args = p.parse_args()
 
@@ -64,8 +68,13 @@ for q in model.parameters():
     q.requires_grad_(False)
 tok = ml.load_tokenizer(args.model)
 enc = ml.Encoder(tok)
+MLM = None
+if args.fluent_k:
+    from transformers import AutoModelForMaskedLM
+    MLM = AutoModelForMaskedLM.from_pretrained(args.mlm_id).to(dev).eval()  # same tokenizer/vocab as Laya
 cal = json.load(open(args.calib))
 T, THR = cal["temperature"], cal["threshold"]
+Z_THR_CAL = T * math.log(THR / (1 - THR))
 THR_SELECT = THR  # targets are always the traces flagged at the calibrated threshold (same set across runs)
 if args.threshold is not None:
     THR = args.threshold
@@ -192,6 +201,51 @@ def trace_max(tr, sids):
     return float(score_windows(tr.window_ids(sids)).max())
 
 
+class FluentFilter:
+    """Fluency constraint (--fluent_k): the candidate pool at position i is the top-k tokens a masked LM
+    (base ModernBERT-large, Laya's backbone before fine-tuning) predicts for i given the *current* trace
+    text, intersected with the word-piece vocabulary. Cached per position; after an edit at i, positions
+    within +-NEAR tokens are re-predicted, since their context changed."""
+    NEAR = 8
+
+    def __init__(self, sids, editable):
+        self.editable = editable
+        self.allowed = {}
+        self._predict(sids, list(editable))
+
+    @torch.no_grad()
+    def _predict(self, sids, positions, bs=32):
+        L = args.mlm_ctx
+        for a in range(0, len(positions), bs):
+            chunk = positions[a:a + bs]
+            seqs, where = [], []
+            for i in chunk:
+                lo, hi = max(0, i - L), min(len(sids), i + L + 1)
+                ctx = list(sids[lo:hi]); ctx[i - lo] = tok.mask_token_id
+                seqs.append([tok.cls_token_id] + ctx + [tok.sep_token_id]); where.append(i - lo + 1)
+            n = max(len(q) for q in seqs)
+            ids = torch.full((len(seqs), n), tok.pad_token_id, dtype=torch.long)
+            att = torch.zeros((len(seqs), n), dtype=torch.long)
+            for r, q in enumerate(seqs):
+                ids[r, :len(q)] = torch.tensor(q); att[r, :len(q)] = 1
+            logits = MLM(input_ids=ids.to(dev), attention_mask=att.to(dev)).logits
+            lg = logits[torch.arange(len(seqs)), torch.tensor(where)].float()
+            lg[:, ~vocab_ok] = float("-inf")
+            top = torch.topk(lg, args.fluent_k, dim=1).indices
+            for i, t in zip(chunk, top):
+                self.allowed[i] = t
+
+    def update(self, sids, i):
+        near = [j for j in self.editable if abs(int(j) - i) <= self.NEAR]
+        self._predict(sids, near)
+
+    def mask(self):
+        m = torch.zeros((len(self.editable), E.size(0)), dtype=torch.bool, device=dev)
+        for r, i in enumerate(self.editable):
+            m[r, self.allowed[i]] = True
+        return m
+
+
 def attack_one(tr, rnd=False):
     """Greedy search. Always applies the best exact-scored candidate (even if it doesn't improve), so the
     search can leave plateaus; the returned adversarial trace is the best state seen. hist[b] is the trace
@@ -204,6 +258,7 @@ def attack_one(tr, rnd=False):
     if len(editable) == 0:
         return hist, edits, best_sids
     vocab_ids = np.where(vocab_ok.cpu().numpy())[0]
+    fl = FluentFilter(sids, editable) if args.fluent_k and not rnd else None
     for step in range(args.budget):
         if min(hist) < Z_THR:
             break
@@ -225,10 +280,15 @@ def attack_one(tr, rnd=False):
             # first-order change of J for replacing x_i by v: (E_v - E_xi) . g_i
             sc = g @ E.float().T - (cur * g).sum(-1, keepdim=True)       # [P, V]
             sc[:, ~vocab_ok] = float("inf")
+            if fl is not None:
+                sc[~fl.mask()] = float("inf")                             # only MLM-plausible tokens
             sc[torch.arange(len(editable)), torch.tensor(sids[editable], device=dev)] = float("inf")
             per_pos = torch.topk(-sc, 4, dim=1)                         # best 4 tokens per position
-            top = torch.topk(per_pos.values.flatten(), min(args.topk, per_pos.values.numel())).indices
-            cands = [(int(editable[t // 4]), int(per_pos.indices.flatten()[t])) for t in top.tolist()]
+            top = torch.topk(per_pos.values.flatten(), min(args.topk, per_pos.values.numel()))
+            cands = [(int(editable[t // 4]), int(per_pos.indices.flatten()[t]))
+                     for t, val in zip(top.indices.tolist(), top.values.tolist()) if math.isfinite(val)]
+            if not cands:
+                break  # no plausible substitution left anywhere
             # exact evaluation of each candidate on the windows it touches
             batch_items, meta = [], []
             for (i, v) in cands:
@@ -251,6 +311,8 @@ def attack_one(tr, rnd=False):
             edits.append((i, int(sids[i]), v))
             sids = sids.copy(); sids[i] = v
             zw = best[2]
+            if fl is not None:
+                fl.update(sids, i)
         hist.append(float(zw.max()))
         if hist[-1] <= min(hist):
             best_sids = sids.copy()
@@ -322,6 +384,7 @@ for k, s in enumerate(targets):
         "edits": [{"pos": int(i), "from": tok.decode([a]), "to": tok.decode([b]), "orig_context": context(tr.sids, i),
                    "adv_context": context(adv, i)} for (i, a, b) in edits],
         "seconds": time.time() - t1, "random_baseline": args.random_baseline, "scope": args.scope,
+        "fluent_k": args.fluent_k, "z_thr_calibrated": Z_THR_CAL,
     }
     fout.write(json.dumps(out) + "\n"); fout.flush()
     print(f"[{k + 1}/{len(targets)}] {s['id'][:60]} win={len(tr.spans)} edit={int(tr.edit.sum())} "
