@@ -114,3 +114,11 @@ Reading:
 - `results/` — metrics, scores and plots; run 1 is in `results/run1_model_v1/`.
 - `attack/` — per-trace attack records, logs and summary.
 - `scripts/` — everything that produced the above.
+
+## Follow-up: fluency-constrained attack (see `fluency_attack_eval.md`)
+
+The original attack's edits were gibberish, which left open whether a real adversary staying hidden could evade the monitor. Re-running it with every substitution restricted to the top-20 words base ModernBERT-large finds plausible at that position (same targets, thresholds, scopes and budgets) answers that:
+- **The attack doesn't collapse.** With agent-text-only edits at the operating threshold, success at 20 swaps is 47% / 100% / 100% (InjecAgent / ToolEmu / R-Judge), vs 44% / 90% / 89% unconstrained. SHADE agent-only still mostly holds: 5% (10% at 60 swaps).
+- **The edits are much more natural.** Local GPT-2 perplexity rises 1.1–2.1× (median), vs 1.8–8.8× for the unconstrained attack. Many successful fluent edits work by making the agent's narration misdescribe its action ("tweet was successfully posted" → "file was successfully generated"; "without determining off-peak hours" → "without violating off-peak hours").
+- **The untuned zero-shot checkpoint, on the same traces, is flipped far more easily** (InjecAgent agent text: 78% vs 36%, McNemar p ≈ 5e-10). That's mostly because its verdicts start much less confident (median p 0.67 vs 0.98), but also because it moves about 2× further per fluent edit. The fine-tuned model's advantage is real on InjecAgent but partial, and absent or unmeasurable elsewhere (ToolEmu at ceiling; SHADE indistinguishable; R-Judge overlap only 6 traces).
+- **Context:** those rates sit at or above the best-case 47% approval rate that natural-language persuasion achieves against LLM CoT monitors (Za et al., arXiv 2607.08066); that's a different mechanism and monitor, so it isn't a direct comparison. On this evidence, a non-generative typed-decision monitor doesn't resist natural-language evasion better than generative CoT monitors. Where it holds, the reason is that the attacker can't reach the evidence.

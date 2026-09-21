@@ -42,6 +42,8 @@ RUNS = {  # file stem -> (label, 0.865 successes derived from z_hist when the ru
     "t05_mrt_all": "unconstrained, any token, to p<0.5",
     "f_val_agent": "fluent, agent text", "f_val_all": "fluent, any token",
     "f_mrt_agent": "fluent, agent text", "f_mrt_all": "fluent, any token",
+    "z_val_agent": "zero-shot ckpt, fluent, agent text", "z_val_all": "zero-shot ckpt, fluent, any token",
+    "z_mrt_agent": "zero-shot ckpt, fluent, agent text", "z_mrt_all": "zero-shot ckpt, fluent, any token",
 }
 res = {}
 for stem, label in RUNS.items():
