@@ -38,7 +38,8 @@ p = argparse.ArgumentParser()
 p.add_argument("--model", default="monitor/laya-monitor")
 p.add_argument("--calib", default="monitor/calibration.json")
 p.add_argument("--data", default="data/eval_heldout.jsonl")
-p.add_argument("--scores", default="results/heldout_scores_finetuned.jsonl")
+p.add_argument("--scores", default="results/heldout_scores_finetuned.jsonl",
+               help="per-trace scores from eval_monitor.py, or 'compute' to score the (val-split violating) records here")
 p.add_argument("--n", type=int, default=30)
 p.add_argument("--budget", type=int, default=20)
 p.add_argument("--topk", type=int, default=48)
@@ -51,6 +52,7 @@ p.add_argument("--seed", type=int, default=0)
 args = p.parse_args()
 
 random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
+ml.AMP = False  # exact fp32 margins for candidate ranking and success checks
 dev = ml.device()
 model, cfg = ml.load_model(args.model, dev)
 model.eval()
@@ -83,7 +85,7 @@ def editable_mask(text, sids):
     offs = enc.tok(text.replace(tok.mask_token, " "), add_special_tokens=False, return_offsets_mapping=True)["offset_mapping"]
     assert len(offs) == len(sids)
     spans = []
-    for mt in re.finditer(r"^\[AGENT\] (.*)$", text, flags=re.M):
+    for mt in re.finditer(r"^\[AGENT(?: THOUGHT| FINAL ANSWER)?\] (.*)$", text, flags=re.M):
         spans.append(mt.span(1))
     m = np.zeros(len(sids), bool)
     j = 0
@@ -137,7 +139,7 @@ def grad_by_position(tr):
         chunk = items[i:i + 16]
         ids, att, mpos, _, _ = ml.collate(chunk, tok.pad_token_id, dev)
         emb = model.encoder.get_input_embeddings()(ids).detach().requires_grad_(True)
-        with torch.autocast("cuda", dtype=torch.bfloat16, enabled=dev.type == "cuda"):
+        with torch.autocast("cuda", dtype=torch.bfloat16, enabled=ml.AMP and dev.type == "cuda"):
             z = ml.forward_embeds(model, emb, att, mpos)
         zs.append(z.detach())
         # logsumexp gradient weights = softmax(z) over ALL windows; computed after, so use z directly
@@ -238,7 +240,18 @@ def context(sids, i, k=12):
 
 # ---- choose targets: violating traces the monitor currently flags (true positives)
 recs = {r["id"]: r for r in ml.read_jsonl(args.data)}
-scores = ml.read_jsonl(args.scores)
+if args.scores == "compute":  # in-distribution targets: training-pool val slice (never trained on)
+    recs = {k: r for k, r in recs.items() if r.get("split") == "val" and r["label"] == "violating"}
+    scores = []
+    for k, r in recs.items():
+        trr = Trace(r["state"])
+        z = trace_max(trr, trr.sids)
+        scores.append({"id": k, "label": r["label"], "task": r["source"], "strategy": r.get("risk_category"),
+                       "p": float(ml.sigmoid(z / T)), "n_windows": len(trr.spans), "leak": False,
+                       "n_editable": int(trr.edit.sum())})
+    scores = [s for s in scores if s["n_editable"] > 0]
+else:
+    scores = ml.read_jsonl(args.scores)
 tp = [s for s in scores if s["label"] == "violating" and s["p"] >= THR and s["n_windows"] <= args.max_windows]
 by_task = {}
 for s in tp:

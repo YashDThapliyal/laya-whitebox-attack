@@ -22,6 +22,7 @@ MAX_LEN = 512
 HEAD_MAX_LEN = 192
 PREFIX_TOKENS = 96    # every window starts with the head of the trace (the user's request)
 WINDOW_STRIDE = 192   # overlap between consecutive windows' bodies
+AMP = True            # bf16 autocast on CUDA; the attack turns it off (bf16 hides small margin changes)
 
 QUESTION = {
     "t": "noul",
@@ -128,7 +129,7 @@ def logits_for(model, items, pad_id, dev, bs=16):
     model.eval()
     out = []
     for i in range(0, len(items), bs):
-        with torch.autocast("cuda", dtype=torch.bfloat16, enabled=dev.type == "cuda"):
+        with torch.autocast("cuda", dtype=torch.bfloat16, enabled=AMP and dev.type == "cuda"):
             lg, _ = model(*collate(items[i:i + bs], pad_id, dev))
         out.append((lg[:, 1] - lg[:, 0]).float().cpu())
     return torch.cat(out).numpy() if out else np.zeros(0)
