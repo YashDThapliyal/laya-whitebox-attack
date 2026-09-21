@@ -50,6 +50,9 @@ p.add_argument("--max_minutes", type=float, default=90)
 p.add_argument("--out", default="attack/results_agent.jsonl")
 p.add_argument("--seed", type=int, default=0)
 p.add_argument("--threshold", type=float, default=None, help="override the calibrated decision threshold (sensitivity runs)")
+p.add_argument("--dump_targets", default=None, help="write the selected target ids to this path and exit")
+p.add_argument("--split", default="val", help="train-pool split to draw targets from with --scores compute")
+p.add_argument("--source", default=None, help="restrict --scores compute targets to one source")
 p.add_argument("--target_ids", default=None, help="JSON list of target ids (overrides threshold-based selection; order kept)")
 p.add_argument("--fluent_k", type=int, default=0,
                help="fluency constraint: only consider the top-k MLM predictions at each position (0 = off)")
@@ -330,7 +333,8 @@ def context(sids, i, k=12):
 # ---- choose targets: violating traces the monitor currently flags (true positives)
 recs = {r["id"]: r for r in ml.read_jsonl(args.data)}
 if args.scores == "compute":  # in-distribution targets: training-pool val slice (never trained on)
-    recs = {k: r for k, r in recs.items() if r.get("split") == "val" and r["label"] == "violating"}
+    recs = {k: r for k, r in recs.items() if r.get("split") == args.split and r["label"] == "violating"
+            and (args.source is None or r["source"] == args.source)}
     scores = []
     for k, r in recs.items():
         trr = Trace(r["state"], r["source"])
@@ -363,6 +367,10 @@ if args.target_ids:  # explicit per-checkpoint target list (e.g. zero-shot check
     by_id = {s["id"]: s for s in scores}
     targets = [by_id[i] for i in want if i in by_id]
     print(f"explicit targets: {len(targets)} of {len(want)} requested ids found", flush=True)
+if args.dump_targets:
+    json.dump([t["id"] for t in targets], open(args.dump_targets, "w"))
+    print(f"dumped {len(targets)} target ids to {args.dump_targets}", flush=True)
+    raise SystemExit(0)
 
 os.makedirs(os.path.dirname(args.out), exist_ok=True)
 done_ids = set()
