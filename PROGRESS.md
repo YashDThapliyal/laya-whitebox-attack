@@ -11,3 +11,4 @@ Append-only log of phase status.
 - 2026-09-21 00:52 — Phase 3 STARTED (baseline eval on held-out SHADE-Arena/MRT)
 - 2026-09-21 01:04 — Phase 3 DONE. Held-out SHADE/MRT (n=1,448): fine-tuned AUROC 0.513, zero-shot 0.505, original MRT LLM monitors 0.662 (reference). At val-F1 threshold FPR=0.99 (flags nearly everything); acc 0.747 = majority rate 0.744. ECE 0.21. Eval took 4 min on A100 (47k windows). Negative transfer result; see baseline_eval.md.
 - 2026-09-21 01:04 — Phase 4 STARTED (white-box HotFlip attack; runs on Colab A100)
+- 2026-09-21 02:26 — Phase 4 SETBACK: Colab A100 VM pruned server-side ~01:46 mid-attack; all in-flight attack results lost (were not synced). Recovered by adopting a server-allocated A100 (client assign call times out at 120s but allocation succeeds); weights upload failed so retraining + re-evaluating on new VM, attacks relaunched with a 3-min local sync watchdog.
