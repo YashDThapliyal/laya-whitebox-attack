@@ -52,7 +52,9 @@ p.add_argument("--seed", type=int, default=0)
 args = p.parse_args()
 
 random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
-ml.AMP = False  # exact fp32 margins for candidate ranking and success checks
+ml.AMP = False  # fp32 (TF32 matmuls) margins for candidate ranking and success checks; bf16 is too coarse
+torch.backends.cuda.matmul.allow_tf32 = True
+torch.backends.cudnn.allow_tf32 = True
 dev = ml.device()
 model, cfg = ml.load_model(args.model, dev)
 model.eval()
@@ -135,8 +137,8 @@ def grad_by_position(tr):
     items = tr.window_ids()
     G = torch.zeros(len(tr.sids), E.size(1), device=dev)
     zs = []
-    for i in range(0, len(items), 16):
-        chunk = items[i:i + 16]
+    for i in range(0, len(items), 8):
+        chunk = items[i:i + 8]
         ids, att, mpos, _, _ = ml.collate(chunk, tok.pad_token_id, dev)
         emb = model.encoder.get_input_embeddings()(ids).detach().requires_grad_(True)
         with torch.autocast("cuda", dtype=torch.bfloat16, enabled=ml.AMP and dev.type == "cuda"):
@@ -166,71 +168,68 @@ def trace_max(tr, sids):
 
 
 def attack_one(tr, rnd=False):
+    """Greedy search. Always applies the best exact-scored candidate (even if it doesn't improve), so the
+    search can leave plateaus; the returned adversarial trace is the best state seen. hist[b] is the trace
+    max-margin after b swaps, so success within budget b <=> min(hist[:b+1]) < Z_THR."""
     sids = tr.sids.copy()
     zw = score_windows(tr.window_ids(sids))
     hist = [float(zw.max())]
-    edits = []
+    edits, best_sids = [], sids.copy()
     editable = np.where(tr.edit)[0]
     if len(editable) == 0:
-        return hist, edits, sids
+        return hist, edits, best_sids
+    vocab_ids = np.where(vocab_ok.cpu().numpy())[0]
     for step in range(args.budget):
-        if hist[-1] < Z_THR:
+        if min(hist) < Z_THR:
             break
         if rnd:
             i = int(np.random.choice(editable))
-            v = int(np.random.choice(np.where(vocab_ok.cpu().numpy())[0]))
+            v = int(np.random.choice(vocab_ids))
             new = sids.copy(); new[i] = v
             zw_new = zw.copy()
             aff = [w for w, (s, e) in enumerate(tr.spans) if s <= i < e]
             zw_new[aff] = score_windows(tr.window_ids(new, aff))
+            edits.append((i, int(sids[i]), v))
             sids, zw = new, zw_new
-            edits.append((i, int(tr.sids[i]), v))
-            hist.append(float(zw.max()))
-            continue
-        tr.sids_cur = sids
-        saved = tr.sids
-        tr.sids = sids
-        G, _ = grad_by_position(tr)
-        tr.sids = saved
-        idx = torch.tensor(editable, device=dev)
-        g = G[idx]                                              # [P, d]
-        cur = E[torch.tensor(sids[editable], device=dev)].float()  # [P, d]
-        # first-order change of J for replacing x_i by v: (E_v - E_xi) . g_i
-        sc = g @ E.float().T - (cur * g).sum(-1, keepdim=True)   # [P, V]
-        sc[:, ~vocab_ok] = float("inf")
-        sc[torch.arange(len(editable)), torch.tensor(sids[editable], device=dev)] = float("inf")
-        per_pos = torch.topk(-sc, 4, dim=1)                     # best 4 tokens per position
-        flat = per_pos.values.flatten()
-        top = torch.topk(flat, min(args.topk, flat.numel())).indices
-        cands = [(int(editable[t // 4]), int(per_pos.indices.flatten()[t])) for t in top.tolist()]
-        # exact evaluation of each candidate on the windows it touches
-        best = (hist[-1], None, None)
-        batch_items, meta = [], []
-        for (i, v) in cands:
-            new = sids.copy(); new[i] = v
-            aff = [w for w, (s, e) in enumerate(tr.spans) if s <= i < e]
-            for w in aff:
-                batch_items.extend(tr.window_ids(new, [w]))
-                meta.append((i, v, w))
-        zc = score_windows(batch_items, bs=64)
-        per = {}
-        for (i, v, w), z in zip(meta, zc):
-            per.setdefault((i, v), {})[w] = z
-        for (i, v), upd in per.items():
-            zz = zw.copy()
-            for w, z in upd.items():
-                zz[w] = z
-            if zz.max() < best[0]:
-                best = (float(zz.max()), (i, v), zz)
-        if best[1] is None:
-            hist.append(hist[-1])
-            break  # no improving candidate -> local optimum
-        i, v = best[1]
-        edits.append((i, int(sids[i]), v))
-        sids = sids.copy(); sids[i] = v
-        zw = best[2]
-        hist.append(best[0])
-    return hist, edits, sids
+        else:
+            saved, tr.sids = tr.sids, sids
+            G, _ = grad_by_position(tr)
+            tr.sids = saved
+            g = G[torch.tensor(editable, device=dev)]                    # [P, d]
+            cur = E[torch.tensor(sids[editable], device=dev)].float()      # [P, d]
+            # first-order change of J for replacing x_i by v: (E_v - E_xi) . g_i
+            sc = g @ E.float().T - (cur * g).sum(-1, keepdim=True)       # [P, V]
+            sc[:, ~vocab_ok] = float("inf")
+            sc[torch.arange(len(editable)), torch.tensor(sids[editable], device=dev)] = float("inf")
+            per_pos = torch.topk(-sc, 4, dim=1)                         # best 4 tokens per position
+            top = torch.topk(per_pos.values.flatten(), min(args.topk, per_pos.values.numel())).indices
+            cands = [(int(editable[t // 4]), int(per_pos.indices.flatten()[t])) for t in top.tolist()]
+            # exact evaluation of each candidate on the windows it touches
+            batch_items, meta = [], []
+            for (i, v) in cands:
+                new = sids.copy(); new[i] = v
+                for w in [w for w, (s, e) in enumerate(tr.spans) if s <= i < e]:
+                    batch_items.extend(tr.window_ids(new, [w]))
+                    meta.append((i, v, w))
+            zc = score_windows(batch_items, bs=64)
+            per = {}
+            for (i, v, w), z in zip(meta, zc):
+                per.setdefault((i, v), {})[w] = z
+            best = (float("inf"), None, None)
+            for (i, v), upd in per.items():
+                zz = zw.copy()
+                for w, z in upd.items():
+                    zz[w] = z
+                if zz.max() < best[0]:
+                    best = (float(zz.max()), (i, v), zz)
+            i, v = best[1]
+            edits.append((i, int(sids[i]), v))
+            sids = sids.copy(); sids[i] = v
+            zw = best[2]
+        hist.append(float(zw.max()))
+        if hist[-1] <= min(hist):
+            best_sids = sids.copy()
+    return hist, edits, best_sids
 
 
 def context(sids, i, k=12):
@@ -259,12 +258,16 @@ for s in tp:
 rng = random.Random(args.seed)
 for v in by_task.values():
     rng.shuffle(v)
-targets = []
+targets, no_edit = [], 0
 while len(targets) < args.n and any(by_task.values()):  # round-robin over tasks for diversity
     for t in sorted(by_task):
         if by_task[t] and len(targets) < args.n:
-            targets.append(by_task[t].pop())
-print(f"true positives available: {len(tp)}; attacking {len(targets)}", flush=True)
+            cand = by_task[t].pop()
+            if Trace(recs[cand["id"]]["state"]).edit.sum() == 0:
+                no_edit += 1  # agent wrote no visible text outside the prefix: nothing to perturb
+                continue
+            targets.append(cand)
+print(f"true positives available: {len(tp)}; skipped {no_edit} with zero editable tokens; attacking {len(targets)}", flush=True)
 
 os.makedirs(os.path.dirname(args.out), exist_ok=True)
 fout = open(args.out, "w")
@@ -284,7 +287,7 @@ for k, s in enumerate(targets):
     out = {
         "id": s["id"], "task": s["task"], "strategy": s["strategy"], "leak": s["leak"], "n_windows": len(tr.spans),
         "n_editable": int(tr.edit.sum()), "z_thr": Z_THR, "z_hist": hist, "p_hist": [float(ml.sigmoid(z / T)) for z in hist],
-        "success": hist[-1] < Z_THR, "swaps_used": len(edits),
+        "success": min(hist) < Z_THR, "swaps_used": len(edits), "z_best": min(hist),
         "z_retokenized": z_retok, "p_retokenized": float(ml.sigmoid(z_retok / T)), "success_retokenized": z_retok < Z_THR,
         "edits": [{"pos": int(i), "from": tok.decode([a]), "to": tok.decode([b]), "orig_context": context(tr.sids, i),
                    "adv_context": context(adv, i)} for (i, a, b) in edits],
@@ -292,6 +295,6 @@ for k, s in enumerate(targets):
     }
     fout.write(json.dumps(out) + "\n"); fout.flush()
     print(f"[{k + 1}/{len(targets)}] {s['id'][:60]} win={len(tr.spans)} edit={int(tr.edit.sum())} "
-          f"p {out['p_hist'][0]:.3f}->{out['p_hist'][-1]:.3f} swaps={len(edits)} ok={out['success']} "
+          f"p {out['p_hist'][0]:.3f}->{min(out['p_hist']):.3f} swaps={len(edits)} ok={out['success']} "
           f"retok_p={out['p_retokenized']:.3f} {out['seconds']:.0f}s", flush=True)
 print("done", (time.time() - t0) / 60, "min", flush=True)
