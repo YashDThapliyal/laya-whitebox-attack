@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+raw/
+monitor/checkpoints/
+*.safetensors
+*.bin
+*.pt
+.DS_Store
