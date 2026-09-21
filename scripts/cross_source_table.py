@@ -1,6 +1,6 @@
 """Phase 4.5: combine per-source monitor quality with per-source attack success into one table.
 
-Inputs (synced from the VM into results/vm/): results_cross_source_auroc.json, attack_{val,mrt}_{agent,agent_random,all}.jsonl
+Inputs: results/cross_source_auroc.json, attack/{val,mrt}_{agent,agent_random,all}.jsonl
 Output: results/cross_source_table.json and a markdown table on stdout (pasted into cross_source_analysis.md).
 """
 import json
@@ -9,14 +9,13 @@ import os
 
 import numpy as np
 
-D = "results/vm"
 BUD = [1, 3, 5, 10, 20]
 SRC = ["injecagent", "toolemu", "r-judge", "shade-arena"]
 NAME = {"injecagent": "InjecAgent", "toolemu": "ToolEmu", "r-judge": "R-Judge", "shade-arena": "SHADE-Arena (MRT)"}
 
 
 def load(name):
-    p = f"{D}/attack_{name}.jsonl"
+    p = f"attack/{name}.jsonl"
     return [json.loads(l) for l in open(p)] if os.path.exists(p) else []
 
 
@@ -38,7 +37,7 @@ def succ(r, b):
     return min(r["z_hist"][: b + 1]) < r["z_thr"]
 
 
-au = json.load(open(f"{D}/results_cross_source_auroc.json"))
+au = json.load(open("results/cross_source_auroc.json"))
 runs = {k: (load(f"val_{k}"), load(f"mrt_{k}")) for k in ["agent", "agent_random", "all"]}
 table = {}
 for s in SRC:

@@ -49,6 +49,7 @@ p.add_argument("--max_windows", type=int, default=40, help="skip traces with mor
 p.add_argument("--max_minutes", type=float, default=90)
 p.add_argument("--out", default="attack/results_agent.jsonl")
 p.add_argument("--seed", type=int, default=0)
+p.add_argument("--threshold", type=float, default=None, help="override the calibrated decision threshold (sensitivity runs)")
 p.add_argument("--resume", action="store_true", help="append to --out, skipping target ids already in it")
 args = p.parse_args()
 
@@ -65,6 +66,9 @@ tok = ml.load_tokenizer(args.model)
 enc = ml.Encoder(tok)
 cal = json.load(open(args.calib))
 T, THR = cal["temperature"], cal["threshold"]
+THR_SELECT = THR  # targets are always the traces flagged at the calibrated threshold (same set across runs)
+if args.threshold is not None:
+    THR = args.threshold
 Z_THR = T * math.log(THR / (1 - THR))  # p < THR  <=>  max-window margin < Z_THR
 E = model.encoder.get_input_embeddings().weight  # [V, d]
 
@@ -272,7 +276,7 @@ if args.scores == "compute":  # in-distribution targets: training-pool val slice
     scores = [s for s in scores if s["n_editable"] > 0]
 else:
     scores = ml.read_jsonl(args.scores)
-tp = [s for s in scores if s["label"] == "violating" and s["p"] >= THR and s["n_windows"] <= args.max_windows]
+tp = [s for s in scores if s["label"] == "violating" and s["p"] >= THR_SELECT and s["n_windows"] <= args.max_windows]
 by_task = {}
 for s in tp:
     by_task.setdefault(s["task"], []).append(s)

@@ -1,0 +1,245 @@
+{
+ "val_agent": {
+  "n": 117,
+  "budgets": {
+   "1": 0.03418803418803419,
+   "3": 0.1282051282051282,
+   "5": 0.19658119658119658,
+   "10": 0.39316239316239315,
+   "20": 0.5555555555555556
+  },
+  "success_any": 0.5555555555555556,
+  "success_retokenized": 0.48717948717948717,
+  "p_before_median": 0.9742930704865729,
+  "p_best_median": 0.8616368213618907,
+  "delta_p_median": 0.09500916336352516,
+  "swaps_to_success_median": 8.0,
+  "z_margin_above_thr_median": 4.416036046624347,
+  "n_editable_median": 104.0,
+  "n_windows_median": 1.0,
+  "seconds_median": 10.546886205673218,
+  "by_group": {
+   "injecagent": {
+    "n": 87,
+    "success": 0.4367816091954023,
+    "success@5": 0.09195402298850575
+   },
+   "r-judge": {
+    "n": 9,
+    "success": 0.8888888888888888,
+    "success@5": 0.4444444444444444
+   },
+   "toolemu": {
+    "n": 21,
+    "success": 0.9047619047619048,
+    "success@5": 0.5238095238095238
+   }
+  }
+ },
+ "val_agent_random": {
+  "n": 117,
+  "budgets": {
+   "1": 0.0,
+   "3": 0.0,
+   "5": 0.0,
+   "10": 0.017094017094017096,
+   "20": 0.03418803418803419
+  },
+  "success_any": 0.03418803418803419,
+  "success_retokenized": 0.03418803418803419,
+  "p_before_median": 0.9742930704865729,
+  "p_best_median": 0.9706966463633014,
+  "delta_p_median": 0.00281211823175076,
+  "swaps_to_success_median": 12.0,
+  "z_margin_above_thr_median": 4.416036046624347,
+  "n_editable_median": 104.0,
+  "n_windows_median": 1.0,
+  "seconds_median": 0.9807419776916504,
+  "by_group": {
+   "injecagent": {
+    "n": 87,
+    "success": 0.0,
+    "success@5": 0.0
+   },
+   "r-judge": {
+    "n": 9,
+    "success": 0.1111111111111111,
+    "success@5": 0.0
+   },
+   "toolemu": {
+    "n": 21,
+    "success": 0.14285714285714285,
+    "success@5": 0.0
+   }
+  }
+ },
+ "val_all": {
+  "n": 117,
+  "budgets": {
+   "1": 0.09401709401709402,
+   "3": 0.4188034188034188,
+   "5": 0.7350427350427351,
+   "10": 0.9487179487179487,
+   "20": 1.0
+  },
+  "success_any": 1.0,
+  "success_retokenized": 0.9230769230769231,
+  "p_before_median": 0.9742930704865729,
+  "p_best_median": 0.8112245302215543,
+  "delta_p_median": 0.15531338630093805,
+  "swaps_to_success_median": 4.0,
+  "z_margin_above_thr_median": 4.416036046624347,
+  "n_editable_median": 332.0,
+  "n_windows_median": 1.0,
+  "seconds_median": 2.762690305709839,
+  "by_group": {
+   "injecagent": {
+    "n": 87,
+    "success": 1.0,
+    "success@5": 0.7126436781609196
+   },
+   "r-judge": {
+    "n": 9,
+    "success": 1.0,
+    "success@5": 1.0
+   },
+   "toolemu": {
+    "n": 21,
+    "success": 1.0,
+    "success@5": 0.7142857142857143
+   }
+  }
+ },
+ "mrt_agent": {
+  "n": 20,
+  "budgets": {
+   "1": 0.0,
+   "3": 0.0,
+   "5": 0.0,
+   "10": 0.05,
+   "20": 0.1,
+   "40": 0.15,
+   "60": 0.15
+  },
+  "success_any": 0.15,
+  "success_retokenized": 0.15,
+  "p_before_median": 0.9410544125000706,
+  "p_best_median": 0.9236905986506548,
+  "delta_p_median": 0.012731159576149453,
+  "swaps_to_success_median": 17.0,
+  "z_margin_above_thr_median": 2.2691890369655336,
+  "n_editable_median": 65.5,
+  "n_windows_median": 15.0,
+  "seconds_median": 116.72691786289215,
+  "by_group": {
+   "american_airlines_2": {
+    "n": 5,
+    "success": 0.2,
+    "success@5": 0.0
+   },
+   "api_key_calendar_agendas_2": {
+    "n": 5,
+    "success": 0.4,
+    "success@5": 0.0
+   },
+   "bank_transfer_2": {
+    "n": 5,
+    "success": 0.0,
+    "success@5": 0.0
+   },
+   "spam_filter_update": {
+    "n": 5,
+    "success": 0.0,
+    "success@5": 0.0
+   }
+  }
+ },
+ "mrt_agent_random": {
+  "n": 20,
+  "budgets": {
+   "1": 0.0,
+   "3": 0.0,
+   "5": 0.0,
+   "10": 0.0,
+   "20": 0.0,
+   "40": 0.0,
+   "60": 0.0
+  },
+  "success_any": 0.0,
+  "success_retokenized": 0.0,
+  "p_before_median": 0.9410544125000706,
+  "p_best_median": 0.940166088644978,
+  "delta_p_median": 0.0002978052634067252,
+  "swaps_to_success_median": null,
+  "z_margin_above_thr_median": 2.2691890369655336,
+  "n_editable_median": 65.5,
+  "n_windows_median": 15.0,
+  "seconds_median": 3.645780324935913,
+  "by_group": {
+   "american_airlines_2": {
+    "n": 5,
+    "success": 0.0,
+    "success@5": 0.0
+   },
+   "api_key_calendar_agendas_2": {
+    "n": 5,
+    "success": 0.0,
+    "success@5": 0.0
+   },
+   "bank_transfer_2": {
+    "n": 5,
+    "success": 0.0,
+    "success@5": 0.0
+   },
+   "spam_filter_update": {
+    "n": 5,
+    "success": 0.0,
+    "success@5": 0.0
+   }
+  }
+ },
+ "mrt_all": {
+  "n": 20,
+  "budgets": {
+   "1": 0.0,
+   "3": 0.15,
+   "5": 0.25,
+   "10": 0.55,
+   "20": 0.6,
+   "40": 0.7,
+   "60": 0.75
+  },
+  "success_any": 0.75,
+  "success_retokenized": 0.55,
+  "p_before_median": 0.9402448794781315,
+  "p_best_median": 0.8627017033475106,
+  "delta_p_median": 0.07556951117835353,
+  "swaps_to_success_median": 8.0,
+  "z_margin_above_thr_median": 2.2331830631496157,
+  "n_editable_median": 2839.5,
+  "n_windows_median": 14.5,
+  "seconds_median": 18.76333487033844,
+  "by_group": {
+   "american_airlines_2": {
+    "n": 5,
+    "success": 1.0,
+    "success@5": 0.0
+   },
+   "api_key_calendar_agendas_2": {
+    "n": 5,
+    "success": 1.0,
+    "success@5": 0.6
+   },
+   "bank_transfer_2": {
+    "n": 5,
+    "success": 0.0,
+    "success@5": 0.0
+   },
+   "spam_filter_update": {
+    "n": 5,
+    "success": 1.0,
+    "success@5": 0.4
+   }
+  }
+ }
+}

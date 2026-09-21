@@ -1,0 +1,23 @@
+Fetching 14 files:   0%|          | 0/14 [00:00<?, ?it/s]Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Fetching 14 files:   7%|▋         | 1/14 [00:00<00:04,  3.24it/s]Fetching 14 files:  43%|████▎     | 6/14 [00:00<00:00, 15.99it/s]Fetching 14 files:  64%|██████▍   | 9/14 [00:00<00:00, 18.82it/s]Fetching 14 files:  86%|████████▌ | 12/14 [00:00<00:00, 20.52it/s]Fetching 14 files: 100%|██████████| 14/14 [00:03<00:00,  3.51it/s]
+train 1604  val 255  device cuda  head_len 103  state_budget 408
+epoch 0 (zero-shot) val: {'auroc': 0.7374800049218654, 'acc@0.5': 0.6862745098039216, 'nll': 0.6465169642449302, 'auroc_injecagent': 0.7792484504132231, 'auroc_r-judge': 0.44078947368421056, 'auroc_toolemu': 0.7871900826446282}
+ep 1 micro 20 loss 0.4426 lr 2.00e-05 0.1min
+ep 1 micro 40 loss 0.3315 lr 1.97e-05 0.2min
+ep 1 micro 60 loss 0.3113 lr 1.90e-05 0.3min
+ep 1 micro 80 loss 0.2539 lr 1.79e-05 0.4min
+ep 1 micro 100 loss 0.2381 lr 1.64e-05 0.5min
+epoch 1 val: {'auroc': 0.9898178909806816, 'acc@0.5': 0.9372549019607843, 'nll': 0.27406315545936105, 'auroc_injecagent': 1.0, 'auroc_r-judge': 0.6546052631578947, 'auroc_toolemu': 0.9979338842975206, 'train_loss': 0.2358185945941472}
+ep 2 micro 120 loss 0.1151 lr 1.46e-05 0.7min
+ep 2 micro 140 loss 0.0685 lr 1.26e-05 0.8min
+ep 2 micro 160 loss 0.0691 lr 1.06e-05 0.9min
+ep 2 micro 180 loss 0.0626 lr 8.47e-06 1.0min
+ep 2 micro 200 loss 0.0583 lr 6.49e-06 1.0min
+epoch 2 val: {'auroc': 0.9858803986710964, 'acc@0.5': 0.8980392156862745, 'nll': 0.4057633710599764, 'auroc_injecagent': 0.9994834710743802, 'auroc_r-judge': 0.6792763157894737, 'auroc_toolemu': 1.0, 'train_loss': 0.05975186013507698}
+ep 3 micro 220 loss 0.0243 lr 4.71e-06 1.2min
+ep 3 micro 240 loss 0.0268 lr 3.20e-06 1.3min
+ep 3 micro 260 loss 0.0239 lr 2.05e-06 1.4min
+ep 3 micro 280 loss 0.0238 lr 1.30e-06 1.5min
+ep 3 micro 300 loss 0.0252 lr 1.01e-06 1.6min
+epoch 3 val: {'auroc': 0.9898486526393503, 'acc@0.5': 0.9294117647058824, 'nll': 0.2688667539583149, 'auroc_injecagent': 0.99974173553719, 'auroc_r-judge': 0.6578947368421053, 'auroc_toolemu': 1.0, 'train_loss': 0.024661222448509698}
+saved monitor/laya-monitor {'best_epoch': 3, 'val_auroc': 0.9898486526393503, 'temperature': 2.483216831491932, 'threshold': 0.8648999929428101, 'val_f1_at_thr': 0.9435483870967742, 'val_acc_at_thr': 0.9450980392156862, 'val_majority_baseline': 0.5058823529411764, 'minutes': 1.7423211336135864, 'args': {'epochs': 3, 'bs': 16, 'accum': 1, 'lr_enc': 2e-05, 'lr_head': 0.0001, 'max_minutes': 60.0, 'max_steps': 0, 'out': 'monitor/laya-monitor', 'ckpt_every': 100, 'grad_ckpt': False}}
