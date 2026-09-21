@@ -50,6 +50,7 @@ p.add_argument("--max_minutes", type=float, default=90)
 p.add_argument("--out", default="attack/results_agent.jsonl")
 p.add_argument("--seed", type=int, default=0)
 p.add_argument("--threshold", type=float, default=None, help="override the calibrated decision threshold (sensitivity runs)")
+p.add_argument("--target_ids", default=None, help="JSON list of target ids (overrides threshold-based selection; order kept)")
 p.add_argument("--fluent_k", type=int, default=0,
                help="fluency constraint: only consider the top-k MLM predictions at each position (0 = off)")
 p.add_argument("--mlm_id", default="answerdotai/ModernBERT-large", help="masked LM used for the fluency filter")
@@ -62,6 +63,8 @@ ml.AMP = False  # fp32 (TF32 matmuls) margins for candidate ranking and success 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 dev = ml.device()
+if args.model == "base":  # zero-shot released Laya checkpoint
+    args.model = ml.base_dir()
 model, cfg = ml.load_model(args.model, dev)
 model.eval()
 for q in model.parameters():
@@ -355,6 +358,11 @@ while len(targets) < args.n and any(by_task.values()):  # round-robin over tasks
                 continue
             targets.append(cand)
 print(f"true positives available: {len(tp)}; skipped {no_edit} with zero editable tokens; attacking {len(targets)}", flush=True)
+if args.target_ids:  # explicit per-checkpoint target list (e.g. zero-shot checkpoint's own true positives)
+    want = json.load(open(args.target_ids))
+    by_id = {s["id"]: s for s in scores}
+    targets = [by_id[i] for i in want if i in by_id]
+    print(f"explicit targets: {len(targets)} of {len(want)} requested ids found", flush=True)
 
 os.makedirs(os.path.dirname(args.out), exist_ok=True)
 done_ids = set()

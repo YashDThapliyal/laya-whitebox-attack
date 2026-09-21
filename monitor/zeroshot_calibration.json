@@ -1,0 +1,7 @@
+{
+ "checkpoint": "convaiinnovations/laya (zero-shot)",
+ "temperature": 1.681091581227247,
+ "threshold": 0.4966999888420105,
+ "val_f1_at_thr": 0.7452229299363057,
+ "val_flag_rate": 0.7254901960784313
+}
