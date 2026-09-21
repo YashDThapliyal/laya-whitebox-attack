@@ -49,6 +49,7 @@ p.add_argument("--max_windows", type=int, default=40, help="skip traces with mor
 p.add_argument("--max_minutes", type=float, default=90)
 p.add_argument("--out", default="attack/results_agent.jsonl")
 p.add_argument("--seed", type=int, default=0)
+p.add_argument("--resume", action="store_true", help="append to --out, skipping target ids already in it")
 args = p.parse_args()
 
 random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
@@ -290,7 +291,12 @@ while len(targets) < args.n and any(by_task.values()):  # round-robin over tasks
 print(f"true positives available: {len(tp)}; skipped {no_edit} with zero editable tokens; attacking {len(targets)}", flush=True)
 
 os.makedirs(os.path.dirname(args.out), exist_ok=True)
-fout = open(args.out, "w")
+done_ids = set()
+if args.resume and os.path.exists(args.out):
+    done_ids = {json.loads(l)["id"] for l in open(args.out) if l.strip()}
+    targets = [t for t in targets if t["id"] not in done_ids]
+    print(f"resume: {len(done_ids)} already done, {len(targets)} remaining", flush=True)
+fout = open(args.out, "a" if args.resume else "w")
 t0 = time.time()
 for k, s in enumerate(targets):
     if (time.time() - t0) / 60 > args.max_minutes:
