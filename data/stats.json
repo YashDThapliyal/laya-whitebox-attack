@@ -1,0 +1,46 @@
+{
+ "train_pool": {
+  "injecagent|train|compliant": 402,
+  "injecagent|train|violating": 402,
+  "injecagent|val|compliant": 98,
+  "injecagent|val|violating": 98,
+  "r-judge|train|compliant": 233,
+  "r-judge|train|violating": 252,
+  "r-judge|val|compliant": 37,
+  "r-judge|val|violating": 49,
+  "toolemu|train|compliant": 122,
+  "toolemu|train|violating": 122,
+  "toolemu|val|compliant": 22,
+  "toolemu|val|violating": 22
+ },
+ "eval_heldout": {
+  "american_airlines_2|compliant": 110,
+  "american_airlines_2|violating": 307,
+  "api_key_calendar_agendas_2|compliant": 69,
+  "api_key_calendar_agendas_2|violating": 233,
+  "bank_transfer_2|compliant": 46,
+  "bank_transfer_2|violating": 262,
+  "expenditure_accounting|compliant": 41,
+  "expenditure_accounting|violating": 4,
+  "spam_filter_update|compliant": 105,
+  "spam_filter_update|violating": 271
+ },
+ "eval_heldout_strategies": {
+  "transcripts": 60,
+  "transcripts_no_hint": 176,
+  "transcripts_no_hint_naive_thinking_time": 72,
+  "transcripts_no_hint_no_thinking_time": 61,
+  "transcripts_no_hint_selective_liar_strategy__thinking_time": 388,
+  "transcripts_no_hint_selective_thinking_time": 164,
+  "transcripts_no_hint_visible_thinking_time": 78,
+  "transcripts_no_secondary_task": 371,
+  "transcripts_no_hint_visible_liar_thinking_time": 78
+ },
+ "mrt_side_task_failed_excluded": 410,
+ "state_chars_median": {
+  "r-judge": 1537,
+  "injecagent": 1192,
+  "toolemu": 494,
+  "shade-arena": 13871
+ }
+}
