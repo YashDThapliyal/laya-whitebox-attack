@@ -78,34 +78,54 @@ vocab_ok = vocab_ok.to(dev)
 print(f"candidate vocab {int(vocab_ok.sum())} / {E.size(0)} ; Z_THR {Z_THR:.3f} (thr {THR:.3f}, T {T:.3f})", flush=True)
 
 
-def editable_mask(text, sids):
-    """Token positions (in state ids) belonging to agent-authored message text."""
-    if args.scope == "all":
-        m = np.ones(len(sids), bool)
-        m[: ml.PREFIX_TOKENS] = False  # the prefix is the user request; keep fixed in both scopes
-        return m
+CONTEXT_TAGS = r"USER|AGENT PROFILE|AVAILABLE TOOLKITS"      # never editable: not written by the agent
+AGENT_TAGS = r"AGENT|AGENT THOUGHT|AGENT FINAL ANSWER"         # agent-authored prose
+# ToolEmu pseudo-traces have no tool calls: their [AGENT ACTION] lines are the agent's own narrated actions,
+# so for ToolEmu those lines count as agent-authored text. Elsewhere [AGENT ACTION] = a tool call (fixed).
+
+
+def _line_spans(text, tags, whole=False):
+    """Char spans of lines with the given tags: content only, or (whole=True) the full line incl. tag and newline."""
+    out = []
+    for mt in re.finditer(rf"^\[({tags})\] (.*)$", text, flags=re.M):
+        out.append((mt.start(0), min(len(text), mt.end(0) + 1)) if whole else mt.span(2))
+    return out
+
+
+def editable_mask(text, sids, source=None):
+    """Token positions (in state ids) the attacker may change.
+    agent scope: agent-authored lines only. all scope: every token outside user/profile/toolkit lines.
+    The shared window prefix (first PREFIX_TOKENS) is frozen only for multi-window traces, where it is
+    repeated in every window; single-window traces have no such duplication."""
     offs = enc.tok(text.replace(tok.mask_token, " "), add_special_tokens=False, return_offsets_mapping=True)["offset_mapping"]
     assert len(offs) == len(sids)
-    spans = []
-    for mt in re.finditer(r"^\[AGENT(?: THOUGHT| FINAL ANSWER)?\] (.*)$", text, flags=re.M):
-        spans.append(mt.span(1))
-    m = np.zeros(len(sids), bool)
-    j = 0
-    for i, (a, b) in enumerate(offs):
-        while j < len(spans) and spans[j][1] <= a:
-            j += 1
-        if j < len(spans) and spans[j][0] <= a and b <= spans[j][1]:
-            m[i] = True
-    m[: ml.PREFIX_TOKENS] = False
+
+    def in_spans(spans):
+        m, j = np.zeros(len(sids), bool), 0
+        for i, (a, b) in enumerate(offs):
+            while j < len(spans) and spans[j][1] <= a:
+                j += 1
+            if j < len(spans) and spans[j][0] <= a and b <= spans[j][1]:
+                m[i] = True
+        return m
+
+    if args.scope == "all":
+        ctx = _line_spans(text, CONTEXT_TAGS, whole=True)
+        m = ~in_spans(ctx) if ctx else np.ones(len(sids), bool)
+    else:
+        tags = AGENT_TAGS + ("|AGENT ACTION" if source == "toolemu" else "")
+        m = in_spans(_line_spans(text, tags))
+    if len(sids) > enc.budget:
+        m[: ml.PREFIX_TOKENS] = False
     return m
 
 
 class Trace:
-    def __init__(self, text):
+    def __init__(self, text, source=None):
         self.text = text
         self.sids = np.array(enc.state_ids(text))
         _, self.spans = enc.windows(list(self.sids))
-        self.edit = editable_mask(text, self.sids)
+        self.edit = editable_mask(text, self.sids, source)
 
     def window_ids(self, sids=None, which=None):
         sids = self.sids if sids is None else sids
@@ -243,7 +263,7 @@ if args.scores == "compute":  # in-distribution targets: training-pool val slice
     recs = {k: r for k, r in recs.items() if r.get("split") == "val" and r["label"] == "violating"}
     scores = []
     for k, r in recs.items():
-        trr = Trace(r["state"])
+        trr = Trace(r["state"], r["source"])
         z = trace_max(trr, trr.sids)
         scores.append({"id": k, "label": r["label"], "task": r["source"], "strategy": r.get("risk_category"),
                        "p": float(ml.sigmoid(z / T)), "n_windows": len(trr.spans), "leak": False,
@@ -263,7 +283,7 @@ while len(targets) < args.n and any(by_task.values()):  # round-robin over tasks
     for t in sorted(by_task):
         if by_task[t] and len(targets) < args.n:
             cand = by_task[t].pop()
-            if Trace(recs[cand["id"]]["state"]).edit.sum() == 0:
+            if Trace(recs[cand["id"]]["state"], recs[cand["id"]]["source"]).edit.sum() == 0:
                 no_edit += 1  # agent wrote no visible text outside the prefix: nothing to perturb
                 continue
             targets.append(cand)
@@ -277,12 +297,12 @@ for k, s in enumerate(targets):
         print("time cap reached", flush=True)
         break
     r = recs[s["id"]]
-    tr = Trace(r["state"])
+    tr = Trace(r["state"], r["source"])
     t1 = time.time()
     hist, edits, adv = attack_one(tr, rnd=args.random_baseline)
     # re-verify on retokenized text of the modified windows' tokens
     adv_text = tok.decode(list(adv))
-    tr2 = Trace(adv_text)
+    tr2 = Trace(adv_text, r["source"])
     z_retok = trace_max(tr2, tr2.sids)
     out = {
         "id": s["id"], "task": s["task"], "strategy": s["strategy"], "leak": s["leak"], "n_windows": len(tr.spans),
