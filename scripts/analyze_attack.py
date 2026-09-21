@@ -64,19 +64,19 @@ try:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4), sharey=True)
-    for ax, pre, title in [(axes[0], "val", "In-distribution val (monitor AUROC 0.994)"),
-                           (axes[1], "mrt", "Held-out SHADE-Arena / MRT (monitor AUROC 0.51)")]:
-        for k, style in [("agent", "o-"), ("agent_random", "s--"), ("all", "^-")]:
-            s = summary.get(f"{pre}_{k}")
-            if s:
-                xs = sorted(int(b) for b in s["budgets"])
-                ax.plot(xs, [s["budgets"][b] for b in xs], style,
-                        label={"agent": "HotFlip, agent text only", "agent_random": "random swaps, agent text only",
-                               "all": "HotFlip, any trace token"}[k] + f" (n={s['n']})")
-        ax.set_xscale("log"); ax.set_xlabel("token-substitution budget"); ax.set_title(title, fontsize=10)
-        ax.set_ylim(-0.02, 1.02); ax.grid(alpha=.3); ax.legend(fontsize=8)
-    axes[0].set_ylabel("attack success rate (flag -> not flagged)")
+    au = json.load(open("results/cross_source_auroc.json"))
+    srcs = [("injecagent", "InjecAgent", False), ("toolemu", "ToolEmu", False), ("r-judge", "R-Judge", False), ("shade-arena", "SHADE-Arena (MRT)", True)]
+    fig, axes = plt.subplots(1, 4, figsize=(17, 4), sharey=True)
+    for ax, (key, title, mrt) in zip(axes, srcs):
+        for k, style, lab in [("agent", "o-", "HotFlip, agent text"), ("agent_random", "s--", "random, agent text"), ("all", "^-", "HotFlip, any token")]:
+            rows = [r for r in runs[f"{'mrt' if mrt else 'val'}_{k}"][0] if mrt or r["task"] == key]
+            if not rows:
+                continue
+            xs = [b for b in BUDGETS if b <= (60 if mrt else 20)]
+            ax.plot(xs, [np.mean([success_at(r, b) for r in rows]) for b in xs], style, label=f"{lab} (n={len(rows)})")
+        ax.set_xscale("log"); ax.set_xlabel("token substitutions"); ax.grid(alpha=.3); ax.legend(fontsize=7)
+        ax.set_title(f"{title}\nmonitor AUROC {au[key]['auroc_trained']:.2f}", fontsize=10); ax.set_ylim(-0.02, 1.02)
+    axes[0].set_ylabel("attack success (flagged -> below threshold)")
     fig.tight_layout(); fig.savefig("attack/success_vs_budget.png", dpi=120)
 except Exception as e:
     print("plot failed", e)
