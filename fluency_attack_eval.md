@@ -4,6 +4,8 @@
 
 > **Correction, added after an edit review (`fluent_edit_review.md`):** "fluent" here means *each substituted word is plausible in its slot* (MLM top-20, low local perplexity). It does **not** mean the edited sentences read naturally. Two independent raters (κ 0.81–0.89) found only **2 of 73** successful agent-text flips read naturally; 40% are awkward and 58% visibly broken ("I have take account of that as well as"). **67%** of the flips change what the text claims, 62% toward sounding more benign. The success rates below stand; the naturalness claims in the headline and section 2 should be read with this correction.
 
+> **Update, SHADE widened to 80 targets (`widened_samples.md`):** fluent agent-text edits reach 19% within 60 swaps (95% CI 12–29%) vs 17% unconstrained; any-token 67% vs 66%. The SHADE conclusions below are unchanged; the n = 20 numbers in this file are superseded by the n = 80 ones.
+
 Builds on `attack_eval.md` and `cross_source_analysis.md` (unchanged). Setup decisions: DECISIONS.md, "Fluency-constrained attack".
 
 ## What changed relative to the original attack
