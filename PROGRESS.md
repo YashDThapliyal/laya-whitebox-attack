@@ -24,3 +24,4 @@ Append-only log of phase status.
 - 2026-09-21 17:36 — Strengthening pass DONE: SHADE widened to 80 targets/cell (fluent any-token n=79, time cap), R-Judge train supplement (60), edit review (73 traces, 2 raters). widened_samples.md + fluent_edit_review.md written; SUMMARY/fluency eval updated. All VMs stopped.
 - 2026-09-21 18:23 — Human spot-check of 26 constrained edits done (project owner). Naturalness confirmed (88% agreement); meaning-change rate revised 67% -> 54% (κ 0.28 vs LLM raters). All docs updated.
 - 2026-09-21 19:16 — Scope correction: narrative-vs-record claim limited to traces with a frozen action record (ToolEmu has none). Rate on eligible traces 39% (7/18, human) vs the all-source 54%. README, SUMMARY, fluency_attack_eval, fluent_edit_review, fluency_experiment_full updated; logged in DECISIONS.
+- 2026-09-21 23:50 — Consistency audit across repo docs and website; all definite errors fixed (see DECISIONS).

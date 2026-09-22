@@ -87,3 +87,15 @@ Running log of non-trivial judgment calls made during the unsupervised run.
 - InjecAgent (frozen attacker tool call, e.g. `FedExShipManagerManageShipment`), R-Judge (frozen tool calls, e.g. `TwitterManagerPostTweet`) and SHADE do keep a frozen record, so the claim holds there.
 - **Decision:** the narrative-vs-record claim is scoped to traces with a frozen record. Recomputed from `results/human_spotcheck.json` joined to `results/edit_labels_final.json` by item number: excluding ToolEmu, 7 of 18 human-reviewed edits change the claim toward benign (39%, Wilson 95% CI 20–61%); the LLM raters give 32 of 52 (62%). The all-source 54% stays reported but is no longer the headline for this claim. The R-Judge "posted → generated" edit is now the lead example.
 - Also added to README: a caveat that flipping "correct" verdicts on near-chance sources (R-Judge, SHADE) says less about robustness, why the attack is still run on a monitor that doesn't generalize, and that "plausible" is per-word (local), which is why many edits are still broken.
+
+## Consistency audit (before publishing the blog)
+- A full cross-document audit against the results files found and fixed:
+  - zero-shot vs fine-tuned "78% vs 36%" is at p < 0.5 (constrained attack); at each model's own threshold it's 78% vs 46%;
+  - SUMMARY's central SHADE row and prose now use the 80-trace widened set (0.12 @20 / 0.17 @60 agent text; 0.47 / 0.66 any-token), with the original 20-trace figures noted;
+  - the window-level false-positive diagnostic is labelled as run 1;
+  - "32 of 52 on the same subset" corrected (same 18 items: raters 9/18 toward benign; all 52 non-ToolEmu: 28/52);
+  - stale "most successes change meaning" and "no human judgment" lines updated;
+  - rater-vs-human comparison now uses the raters' 65% on the same 26 items;
+  - "moves p by 0.1–0.2" corrected to a median of about 0.1;
+  - pooled val AUROC recomputed with windowed scoring: 0.987 (`results/val_pooled_windowed_auroc.json`), so "0.99 pooled" holds under both scoring views.
+- Website: blog wording fixed (zero-shot comparison bar, who read the 73 edits, SHADE window count scoped to attacked traces, "suggestive, not established"); project card ranges scoped to training-style sources and constrained/SHADE figures added; blog card no longer implies the narrative change is the main mechanism.

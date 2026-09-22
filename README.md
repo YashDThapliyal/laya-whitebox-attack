@@ -34,7 +34,7 @@ The fine-tuned monitor is near-perfect on its training-style sources, but on hel
 
 ### 1. The monitor doesn't generalize to realistic sabotage
 
-- On held-out slices of its training-style data it reaches AUROC 1.00 on InjecAgent and ToolEmu but only 0.52 on R-Judge. Pooled over all 255 validation traces it's 0.99; that blended figure is dominated by InjecAgent and ToolEmu (220 of the 255).
+- On held-out slices of its training-style data it reaches AUROC 1.00 on InjecAgent and ToolEmu but only 0.52 on R-Judge. Pooled over all 255 validation traces it's 0.99 (0.987 with the same windowed scoring as the per-source numbers; `results/val_pooled_windowed_auroc.json`); that blended figure is dominated by InjecAgent and ToolEmu (220 of the 255).
 - On 1,448 held-out SHADE-Arena traces it reaches 0.577 [0.55, 0.61]. The original MRT LLM monitors score 0.66 on the same traces.
 - At its operating threshold it flags 92% of benign SHADE traces, so as a deployed monitor it would mostly raise false alarms.
 - The untuned zero-shot Laya checkpoint does worse on SHADE (AUROC 0.51).
@@ -44,7 +44,7 @@ Details: [`baseline_eval.md`](baseline_eval.md).
 ### 2. Structure predicts fragility, not monitor quality
 
 - Sources with equally good monitors differ 2× in attack success (InjecAgent 0.44 vs ToolEmu 0.90), and equally poor ones differ about 9×.
-- Across per-source attack settings, success correlates with how much of the trace the attacker can edit (Spearman ρ = +0.65) and with how many windows the trace spans (ρ = −0.66). It doesn't correlate with monitor AUROC.
+- Pooled per trace over the 137 attacked traces (agent-text scope, the original 20-trace SHADE set), success correlates with how much of the trace the attacker can edit (Spearman ρ = +0.65) and with how many windows the trace spans (ρ = −0.66). Across sources it doesn't track monitor AUROC.
 - On SHADE, agent-text edits mostly fail (17% within 60 swaps, n = 80). The flag comes from many windows of tool output the agent can't touch. Allowed any token, the attack flips about two-thirds.
 - On the two near-chance sources (R-Judge 0.52, SHADE 0.58), "correct" verdicts are partly lucky guesses, so flipping them says less about robustness than on InjecAgent and ToolEmu. The within-source InjecAgent split in `cross_source_analysis.md` (83% vs 7% by how much of the evidence is frozen) is the cleaner test.
 - Only four sources back this, two of them synthetic, so it's suggestive rather than established.
@@ -56,7 +56,7 @@ Details: [`cross_source_analysis.md`](cross_source_analysis.md), [`attack_eval.m
 - Requiring every swap to be a top-20 masked-LM prediction left success unchanged or slightly higher: 47% / 100% / 100% on InjecAgent / ToolEmu / R-Judge, vs 44% / 90% / 89% unconstrained.
 - On SHADE (n = 80) the constrained attack reaches 19% vs 17% at 60 swaps.
 - "Plausible" is local. Each swapped word fits its slot according to the language model, but several swaps in one sentence compound into broken text (finding 5).
-- **A better-calibrated checkpoint resists more, on one source.** On the same 85 InjecAgent traces, the untuned zero-shot checkpoint is flipped 78% of the time vs 36% for the fine-tuned one (McNemar p ≈ 5e-10). The main reason is that its verdicts start far less confident (median p 0.67 vs 0.98); each edit also moves it about 2× further. On other sources there's no measurable difference.
+- **A better-calibrated checkpoint resists more, on one source.** On the same 85 InjecAgent traces, the plausible-word attack pushes the untuned zero-shot checkpoint below p = 0.5 on 78% of them vs 36% for the fine-tuned one (McNemar p ≈ 5e-10). At each model's own alarm threshold it's 78% vs 46%. The main reason is that its verdicts start far less confident (median p 0.67 vs 0.98); each edit also moves it about 2× further. On other sources there's no measurable difference.
 - **On traces the monitor trained on**, a 60-trace R-Judge train-split supplement is harder: 20–27% overall. When matched to the held-out traces' starting confidence it's 73%.
 
 Details: [`fluency_attack_eval.md`](fluency_attack_eval.md).
@@ -77,7 +77,7 @@ Details: [`fluent_edit_review.md`](fluent_edit_review.md).
 
 - Two LLM raters labelled all 73 successful constrained edits (InjecAgent, ToolEmu, R-Judge and SHADE). A human then reviewed a stratified sample of 26.
 - **Naturalness:** the human confirmed the LLM labels (88% agreement, κ 0.78). 58% of edits are visibly broken, 40% awkward, and only 2 of 73 read naturally. This is not a stealth result: a careful human reader would likely catch most of these edits.
-- **Meaning change:** the human agreed only weakly with the raters (κ 0.28). Across all sources, the rate of edits that change the text's claim dropped from the raters' 67% to **54%** (95% CI about 35–72%). On traces with a frozen action record it's **39%** (finding 4).
+- **Meaning change:** the human agreed only weakly with the raters (κ 0.28). Across all sources, the human put the rate of edits that change the text's claim at **54%** (95% CI about 35–72%), against the raters' 65% on the same 26 items (67% over all 73). On traces with a frozen action record it's **39%** (finding 4).
 - A later check of the traces behind the examples found that the ToolEmu edits have no record to contradict. Finding 4 is scoped accordingly.
 
 Details: [`fluent_edit_review.md`](fluent_edit_review.md) (the "Human spot-check" section), `results/human_spotcheck.json`.
