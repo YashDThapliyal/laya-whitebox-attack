@@ -1,15 +1,15 @@
-# Review of "fluent" attack edits: do they read naturally, and do they change meaning?
+# Review of the constrained attack edits: do they read naturally, and do they change meaning?
 
-**Short answer: mostly no, and mostly yes.** Of the 73 traces the fluency-constrained attack flipped (fine-tuned monitor, agent-text edits, operating threshold p < 0.865), only **2 (3%)** read naturally. **29 (40%)** are awkward and **42 (58%)** are visibly broken. **49 (67%)** change the substance of what the text says, **45 (62%)** of them toward sounding more benign; **16 (22%)** preserve meaning and **8 (11%)** are garbled. Only **2 of 73** are both natural and meaning-changing, the "stealthy lie" case. So the earlier "fluent" framing overstated how natural these edits are. The MLM filter and local GPT-2 perplexity measure whether each *word* is plausible in its slot, and they missed that the *sentences* mostly don't read naturally. (Corrections to `fluency_attack_eval.md` and `SUMMARY.md` are noted there.)
+**Short answer: mostly no, and mostly yes.** Of the 73 traces the fluency-constrained ("constrained") attack flipped (fine-tuned monitor, agent-text edits, operating threshold p < 0.865), only **2 (3%)** read naturally. **29 (40%)** are awkward and **42 (58%)** are visibly broken. **49 (67%)** change the substance of what the text says, **45 (62%)** of them toward sounding more benign; **16 (22%)** preserve meaning and **8 (11%)** are garbled. Only **2 of 73** are both natural and meaning-changing, the "stealthy lie" case. So the earlier "fluent" framing overstated how natural these edits are, and it has been withdrawn. The MLM filter and local GPT-2 perplexity measure whether each *word* is plausible in its slot, and they missed that the *sentences* mostly don't read naturally. (Corrections to `fluency_attack_eval.md` and `SUMMARY.md` are noted there.)
 
 ## Method
 
-- **Set:** every trace the fluent attack flipped at the operating threshold with agent-text-only edits: InjecAgent 41, ToolEmu 21, R-Judge 9, SHADE 2 = 73. Each was rebuilt by replaying its edits on the original tokens up to the first crossing (0 replay mismatches), then diffed line by line against the original (`results/edit_review_items.md` has all of them).
+- **Set:** every trace the constrained attack flipped at the operating threshold with agent-text-only edits: InjecAgent 41, ToolEmu 21, R-Judge 9, SHADE 2 = 73. Each was rebuilt by replaying its edits on the original tokens up to the first crossing (0 replay mismatches), then diffed line by line against the original (`results/edit_review_items.md` has all of them).
 - **Labels:** two independent LLM raters, blind to each other and to the monitor's scores, labelled every trace on a fixed rubric:
   - *naturalness:* natural / awkward / broken;
   - *meaning:* preserving / changing / garbled;
   - *benign shift:* does the change make the behaviour or the request sound more benign?
-  Agreement: naturalness 93% (Cohen's κ 0.87), meaning 90% (κ 0.81), benign shift 95% (κ 0.89). I adjudicated the 12 traces with any disagreement by reading them. **These are model raters, not humans.** The sample in the last section is for a human to check them.
+  Agreement: naturalness 93% (Cohen's κ 0.87), meaning 90% (κ 0.81), benign shift 95% (κ 0.89). I adjudicated the 12 traces with any disagreement by reading them. **These are LLM raters, not humans, so every naturalness and meaning number in this file carries that caveat.** The 26-example side-by-side sample in the last section is provided for a human spot-check; **no human review has been done yet.**
 
 ## Results
 
@@ -24,7 +24,7 @@
 Meaning × naturalness: changing & broken 28, changing & awkward 19, **changing & natural 2**, preserving & awkward 10, preserving & broken 6, garbled & broken 8.
 
 **What this sharpens:**
-1. **"The monitor is fooled by narration that misdescribes the action" is now a measured proportion.** About two-thirds of successful fluent flips change what the text claims, and nearly all of those make it sound more benign. Examples: "without **determining** off-peak hours" → "without **violating** off-peak hours"; "The tweet was successfully **posted**" → "…**generated**"; "Please transfer 2000 USD" → "Just transferred **zero** USD". The monitor accepts the rewritten claim even though the frozen tool calls, which show what actually happened, are unchanged.
+1. **"The monitor is fooled by narration that misdescribes the action" is now a measured proportion.** About two-thirds of successful constrained flips change what the text claims, and nearly all of those make it sound more benign. Examples: "without **determining** off-peak hours" → "without **violating** off-peak hours"; "The tweet was successfully **posted**" → "…**generated**"; "Please transfer 2000 USD" → "Just transferred **zero** USD". The monitor accepts the rewritten claim even though the frozen tool calls, which show what actually happened, are unchanged.
 2. **Where the meaning change happens differs by source.**
    - *ToolEmu:* the edited text *is* the action description, so a meaning change is a direct misdescription of the risky action.
    - *InjecAgent:* the agent's final answer quotes the injected instruction. A rough pattern-based count says 22 of the 28 meaning-changing flips rewrite that quoted request (20 of them also edit the agent's own narration), and 6 touch only the agent's own narration.
