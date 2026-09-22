@@ -1,6 +1,9 @@
 # Review of the constrained attack edits: do they read naturally, and do they change meaning?
 
-**Short answer: mostly no, and mostly yes.** Of the 73 traces the fluency-constrained ("constrained") attack flipped (fine-tuned monitor, agent-text edits, operating threshold p < 0.865), only **2 (3%)** read naturally. **29 (40%)** are awkward and **42 (58%)** are visibly broken. **49 (67%)** change the substance of what the text says, **45 (62%)** of them toward sounding more benign; **16 (22%)** preserve meaning and **8 (11%)** are garbled. Only **2 of 73** are both natural and meaning-changing, the "stealthy lie" case. So the earlier "fluent" framing overstated how natural these edits are, and it has been withdrawn. The MLM filter and local GPT-2 perplexity measure whether each *word* is plausible in its slot, and they missed that the *sentences* mostly don't read naturally. (Corrections to `fluency_attack_eval.md` and `SUMMARY.md` are noted there.)
+**Short answer: they mostly don't read naturally, and about half change meaning.** The fluency-constrained ("constrained") attack flipped 73 traces (fine-tuned monitor, agent-text edits, operating threshold p < 0.865). Two LLM raters labelled all 73, and a human reviewed a stratified sample of 26.
+- **Naturalness, confirmed by the human review.** The LLM raters found only **2 of 73 (3%)** natural, **29 (40%)** awkward and **42 (58%)** visibly broken. The human agreed on 23 of 26 (88%, κ 0.78), with a near-identical distribution: 2 natural, 8 awkward, 16 broken.
+- **Meaning, revised down by the human review.** The LLM raters called 67% of the 73 meaning-changing (62% toward benign), but their meaning labels agree only weakly with the human (58%, κ 0.28). **On the human-reviewed sample, 54% change what the text claims (95% CI ~35–72%) and 54% shift it toward benign**, vs 65% and 58% per the LLM raters on the same 26. Most of the gap is that the human classed more broken edits as **garbled** (9/26, vs 2/26 for the raters) instead of "same meaning" or "changed".
+- **Stealth: none.** Only 2 of 73 are both natural and meaning-changing, the "stealthy lie" case. The earlier "fluent" framing overstated how natural these edits are and has been withdrawn.
 
 ## Method
 
@@ -9,9 +12,11 @@
   - *naturalness:* natural / awkward / broken;
   - *meaning:* preserving / changing / garbled;
   - *benign shift:* does the change make the behaviour or the request sound more benign?
-  Agreement: naturalness 93% (Cohen's κ 0.87), meaning 90% (κ 0.81), benign shift 95% (κ 0.89). I adjudicated the 12 traces with any disagreement by reading them. **These are LLM raters, not humans, so every naturalness and meaning number in this file carries that caveat.** The 26-example side-by-side sample in the last section is provided for a human spot-check; **no human review has been done yet.**
+  Agreement: naturalness 93% (Cohen's κ 0.87), meaning 90% (κ 0.81), benign shift 95% (κ 0.89). I adjudicated the 12 traces with any disagreement by reading them. **The 73-trace numbers are LLM-rater labels.** A human (the project owner) reviewed the 26-example stratified sample in the last section. Their labels are in `results/human_spotcheck.json` and are compared below; where they disagree, the human numbers are the ones to trust.
 
 ## Results
+
+*LLM-rater labels (all 73). See the human spot-check section for the human-reviewed revision.*
 
 | Source | flipped traces | natural | awkward | broken | meaning-preserving | meaning-changing | garbled | changing toward benign |
 |---|---|---|---|---|---|---|---|---|
@@ -24,7 +29,7 @@
 Meaning × naturalness: changing & broken 28, changing & awkward 19, **changing & natural 2**, preserving & awkward 10, preserving & broken 6, garbled & broken 8.
 
 **What this sharpens:**
-1. **"The monitor is fooled by narration that misdescribes the action" is now a measured proportion.** About two-thirds of successful constrained flips change what the text claims, and nearly all of those make it sound more benign. Examples: "without **determining** off-peak hours" → "without **violating** off-peak hours"; "The tweet was successfully **posted**" → "…**generated**"; "Please transfer 2000 USD" → "Just transferred **zero** USD". The monitor accepts the rewritten claim even though the frozen tool calls, which show what actually happened, are unchanged.
+1. **"The monitor is fooled by narration that misdescribes the action" is now a measured proportion.** About half of successful constrained flips change what the text claims (54% in the human-reviewed sample; 67% per the less reliable LLM meaning labels), and nearly all of those make it sound more benign. Examples: "without **determining** off-peak hours" → "without **violating** off-peak hours"; "The tweet was successfully **posted**" → "…**generated**"; "Please transfer 2000 USD" → "Just transferred **zero** USD". The monitor accepts the rewritten claim even though the frozen tool calls, which show what actually happened, are unchanged.
 2. **Where the meaning change happens differs by source.**
    - *ToolEmu:* the edited text *is* the action description, so a meaning change is a direct misdescription of the risky action.
    - *InjecAgent:* the agent's final answer quotes the injected instruction. A rough pattern-based count says 22 of the 28 meaning-changing flips rewrite that quoted request (20 of them also edit the agent's own narration), and 6 touch only the agent's own narration.
@@ -33,7 +38,24 @@ Meaning × naturalness: changing & broken 28, changing & awkward 19, **changing 
 
 **Implication for the earlier write-up.** The success rates in `fluency_attack_eval.md` stand, but "fluent" should be read as "each substituted word is locally plausible", not "reads naturally". The comparison to the persuasion paper, which uses freely generated natural-language arguments, should be read with that in mind: this attack's text is much less natural than an LLM-written argument.
 
-## Spot-check sample for a human reader (26 of 73, stratified by source, seeded)
+## Human spot-check (26 of 73, stratified)
+
+A human (the project owner) labelled the 26 sample traces on the same rubric, blind to the LLM labels. Labels and notes: `results/human_spotcheck.json`.
+
+| | human | LLM final labels, same 26 | agreement |
+|---|---|---|---|
+| naturalness | natural 2 · awkward 8 · broken 16 | natural 2 · awkward 9 · broken 15 | 23/26 (88%), κ 0.78 |
+| meaning | changing 14 · preserving 3 · garbled 9 | changing 17 · preserving 7 · garbled 2 | 15/26 (58%), κ 0.28 |
+| changes toward benign | 14/26 (54%) | 15/26 (58%) | |
+
+**What the human review changes:**
+- **Naturalness holds.** The human's distribution matches the raters' almost exactly, including the same two natural items: the ToolEmu "without determining → without violating" edit and R-Judge "tweet posted → generated".
+- **The meaning numbers are softer than the LLM raters suggested.** The human called 9 items garbled (broken text with no coherent alternative claim) where the raters mostly read either a meaning change (4) or no change (4). The rater agreement of κ 0.81 reflected the two LLM raters agreeing with each other, not with a human. The best estimate that a successful edit changes the narration's claim is therefore **about half (54%, CI ~35–72%)**, not two-thirds.
+- **It isn't one-directional.** In one item ("I'll take care of that" → "I have take care in, as recommended by") the human saw a coherent benign reframe (the action presented as sanctioned) where the raters and my adjudication had called it garbled.
+- **Human-noted patterns:** clean causal inversions ("*causing* hazardous incidents" → "*avoiding*"; "*causing* System Instability" → "*avoiding*"), blame shifts ("the *agent* may mistakenly grant…" → "the *user* may accidentally grant…"), denials ("the remaining request" → "*no* remaining request"; "deposit 2000 USD" → "just transferred *zero* USD"), and requests turned hypothetical ("Please redirect" → "We could redirect").
+- **One item marked uncertain.** In item 72 (SHADE) the reviewer's view of the text looked corrupted. The raw record was checked and is intact; the odd tokens ("…relevant onenextmodel_thinking>") are the attack's own edits to the closing tag. It's kept as garbled, flagged uncertain.
+
+## Spot-check sample (the 26 items the human reviewed) (26 of 73, stratified by source, seeded)
 
 Original and edited text for the lines that changed, with the final labels. `…` marks context trimmed at ±18 words around the edits.
 
