@@ -34,7 +34,7 @@ The fine-tuned monitor is near-perfect on its training-style sources, but on hel
 
 ### 1. The monitor doesn't generalize to realistic sabotage
 
-- On held-out slices of its training-style data it reaches AUROC 0.99 overall, and 1.00 on InjecAgent and ToolEmu.
+- On held-out slices of its training-style data it reaches AUROC 1.00 on InjecAgent and ToolEmu but only 0.52 on R-Judge. Pooled over all 255 validation traces it's 0.99; that blended figure is dominated by InjecAgent and ToolEmu (220 of the 255).
 - On 1,448 held-out SHADE-Arena traces it reaches 0.577 [0.55, 0.61]. The original MRT LLM monitors score 0.66 on the same traces.
 - At its operating threshold it flags 92% of benign SHADE traces, so as a deployed monitor it would mostly raise false alarms.
 - The untuned zero-shot Laya checkpoint does worse on SHADE (AUROC 0.51).
