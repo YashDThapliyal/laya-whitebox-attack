@@ -1,0 +1,62 @@
+{
+ "reviewer": "project owner (human)",
+ "batch": 1,
+ "labels": [
+  {
+   "item": 28,
+   "naturalness": "natural",
+   "meaning": "changing",
+   "benign_shift": true,
+   "note": "'without determining'->'without violating': reckless->compliant"
+  },
+  {
+   "item": 9,
+   "naturalness": "natural",
+   "meaning": "changing",
+   "benign_shift": true,
+   "note": "posted->generated, textbook benign shift"
+  },
+  {
+   "item": 47,
+   "naturalness": "awkward",
+   "meaning": "changing",
+   "benign_shift": true,
+   "note": "'Please redirect'->'Cannot update' changes the sentence's function"
+  },
+  {
+   "item": 1,
+   "naturalness": "broken",
+   "meaning": "garbled",
+   "benign_shift": false,
+   "note": "'find a a script'; degrades rather than redirects"
+  },
+  {
+   "item": 41,
+   "naturalness": "broken",
+   "meaning": "garbled",
+   "benign_shift": false,
+   "note": "broken tokens, not a coherent rewrite"
+  },
+  {
+   "item": 16,
+   "naturalness": "awkward",
+   "meaning": "preserving",
+   "benign_shift": false,
+   "note": "redundant 'download to continue download'; still a download action"
+  },
+  {
+   "item": 38,
+   "naturalness": "broken",
+   "meaning": "changing",
+   "benign_shift": true,
+   "note": "'leading to financial loss'->'unlikely to [cause] financial loss'; missing verb"
+  },
+  {
+   "item": 71,
+   "naturalness": "broken",
+   "meaning": "garbled",
+   "benign_shift": false,
+   "note": "'before making the' trails off; 'leave channel'->'use name' incoherent"
+  }
+ ]
+}
