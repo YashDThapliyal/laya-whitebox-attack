@@ -29,9 +29,12 @@ p.add_argument("--max_steps", type=int, default=0, help="debug: stop after N mic
 p.add_argument("--out", default="monitor/laya-monitor")
 p.add_argument("--ckpt_every", type=int, default=100)
 p.add_argument("--grad_ckpt", action="store_true")
+p.add_argument("--seed", type=int, default=0)
+p.add_argument("--calib_out", default="monitor/calibration.json")
+p.add_argument("--work_dir", default="monitor", help="checkpoints/ and train_log.jsonl go here")
 args = p.parse_args()
 
-SEED = 0
+SEED = args.seed
 random.seed(SEED); np.random.seed(SEED); torch.manual_seed(SEED)
 dev = ml.device()
 src = ml.base_dir()
@@ -82,8 +85,9 @@ def evaluate(items):
     return res, z, y
 
 
-os.makedirs("monitor/checkpoints", exist_ok=True)
-log = open("monitor/train_log.jsonl", "a")
+CKPT_DIR = os.path.join(args.work_dir, "checkpoints")
+os.makedirs(CKPT_DIR, exist_ok=True)
+log = open(os.path.join(args.work_dir, "train_log.jsonl"), "a")
 res0, _, _ = evaluate(val)
 print("epoch 0 (zero-shot) val:", res0, flush=True)
 log.write(json.dumps({"epoch": 0, "val": res0}) + "\n"); log.flush()
@@ -112,7 +116,7 @@ for ep in range(1, args.epochs + 1):
             print(f"ep {ep} micro {micro} loss {run_loss / n:.4f} lr {sched.get_last_lr()[0]:.2e} {el:.1f}min", flush=True)
             log.write(json.dumps({"epoch": ep, "micro": micro, "train_loss": run_loss / n, "min": el}) + "\n"); log.flush()
         if micro % args.ckpt_every == 0:
-            torch.save({"model": model.state_dict(), "epoch": ep, "micro": micro}, "monitor/checkpoints/latest.pt")
+            torch.save({"model": model.state_dict(), "epoch": ep, "micro": micro}, os.path.join(CKPT_DIR, "latest.pt"))
         if (time.time() - t0) / 60 > args.max_minutes or (args.max_steps and micro >= args.max_steps):
             stop = True
             break
@@ -122,13 +126,13 @@ for ep in range(1, args.epochs + 1):
     log.write(json.dumps({"epoch": ep, "val": res, "min": (time.time() - t0) / 60}) + "\n"); log.flush()
     if res["auroc"] > best:
         best, best_ep = res["auroc"], ep
-        torch.save(model.state_dict(), "monitor/checkpoints/best.pt")
+        torch.save(model.state_dict(), os.path.join(CKPT_DIR, "best.pt"))
     if stop:
         print("stopping: time/step cap reached", flush=True)
         break
 
 # ---- restore best, fit temperature + threshold on val, save in laya format
-model.load_state_dict(torch.load("monitor/checkpoints/best.pt", map_location=dev))
+model.load_state_dict(torch.load(os.path.join(CKPT_DIR, "best.pt"), map_location=dev))
 _, z, y = evaluate(val)
 zt, yt = torch.tensor(z, dtype=torch.float64), torch.tensor(y, dtype=torch.float64)
 logT = torch.zeros(1, dtype=torch.float64, requires_grad=True)
@@ -156,5 +160,5 @@ cfg["temperature"] = [cfg["temperature"][0], cfg["temperature"][1], T]
 cfg["temperature_by_options"] = dict(cfg.get("temperature_by_options", {}), **{"noul:2": T})
 cfg["monitor"] = {"question": ml.QUESTION, **calib}
 ml.save_model(model, cfg, src, args.out)
-json.dump(calib, open("monitor/calibration.json", "w"), indent=1)
+json.dump(calib, open(args.calib_out, "w"), indent=1)
 print("saved", args.out, calib, flush=True)
