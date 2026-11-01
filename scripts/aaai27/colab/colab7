@@ -1,0 +1,5 @@
+#!/bin/bash
+# colab7 ARGS... : the pinned 0.7.5 Colab CLI on this job's own session file ($COLAB_WORK/colab_sessions.json),
+# so job VMs never mix with sessions in the default ~/.config/colab-cli/sessions.json.
+: "${COLAB_WORK:?set COLAB_WORK to the working dir for sessions, staging and transfer chunks}"
+exec uvx --from google-colab-cli==0.7.5 colab --config "$COLAB_WORK/colab_sessions.json" "$@"

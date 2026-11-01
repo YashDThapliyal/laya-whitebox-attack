@@ -1,0 +1,64 @@
+{
+ "name": "laya7",
+ "rdir": "/content/proj",
+ "ldir": "{repo}/results/aaai27/job7",
+ "interval": 60,
+ "setup": {
+  "uploads": [
+   [
+    "{work}/stage/p7.tgz",
+    "/content/p7.tgz"
+   ]
+  ],
+  "cmd": "tar xzf p7.tgz && gunzip -f proj/inputs/texts.jsonl.gz && pip install -q laya && python -c 'import torch; print(torch.cuda.get_device_name(0))'",
+  "big_uploads": [
+   [
+    "{work}/stage/run1_model.safetensors",
+    "/content/proj/monitor/run1/model.safetensors"
+   ]
+  ]
+ },
+ "steps": [
+  {
+   "name": "smoke",
+   "cmds": [
+    [
+     "python scripts/aaai27/score_texts.py --texts inputs/texts.jsonl --keys inputs/keys_job7.txt --model monitor/run1 --out smoke/run1.jsonl --limit 8",
+     "logs/smoke_run1.log"
+    ],
+    [
+     "python scripts/aaai27/score_texts.py --texts inputs/texts.jsonl --keys inputs/keys_job7.txt --model base --out smoke/zeroshot.jsonl --limit 8",
+     "logs/smoke_zeroshot.log"
+    ]
+   ],
+   "outputs": [
+    "smoke/run1.jsonl",
+    "smoke/zeroshot.jsonl"
+   ],
+   "stall": 600
+  },
+  {
+   "name": "score",
+   "needs": [
+    "smoke"
+   ],
+   "resume": true,
+   "cmds": [
+    [
+     "python scripts/aaai27/score_texts.py --texts inputs/texts.jsonl --keys inputs/keys_job7.txt --model monitor/run1 --out scores_run1.jsonl",
+     "logs/run1.log"
+    ],
+    [
+     "python scripts/aaai27/score_texts.py --texts inputs/texts.jsonl --keys inputs/keys_job7.txt --model base --out scores_zeroshot.jsonl",
+     "logs/zeroshot.log"
+    ]
+   ],
+   "outputs": [
+    "scores_run1.jsonl",
+    "scores_zeroshot.jsonl"
+   ],
+   "stall": 300
+  }
+ ],
+ "task_cap": 60
+}

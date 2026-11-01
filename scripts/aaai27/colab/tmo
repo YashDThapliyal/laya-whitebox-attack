@@ -1,0 +1,3 @@
+#!/bin/bash
+# tmo SECONDS cmd...  (macOS has no coreutils timeout)
+exec perl -e 'alarm shift; exec @ARGV or die "exec failed: $!"' "$@"

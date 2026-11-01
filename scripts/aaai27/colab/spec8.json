@@ -1,0 +1,234 @@
+{
+ "name": "laya8",
+ "rdir": "/content/proj",
+ "ldir": "{repo}/results/aaai27/job8",
+ "task_cap": 60,
+ "interval": 90,
+ "setup": {
+  "uploads": [
+   [
+    "{work}/stage/p8.tgz",
+    "/content/p8.tgz"
+   ]
+  ],
+  "cmd": "tar xzf p8.tgz && pip install -q laya && cd proj && PYTHONPATH=scripts python -c 'import monitor_lib as ml, torch; print(ml.base_dir()); print(torch.cuda.get_device_name(0))'"
+ },
+ "steps": [
+  {
+   "name": "smoke",
+   "stall": 900,
+   "cmds": [
+    [
+     "bash scripts/aaai27/resume_test.sh out/resume_test 130 20 115 125 && ( python scripts/train_monitor.py --epochs 1 --max_steps 10 --bs 16 --accum 1 --seed 1 --out monitor/smoke --calib_out monitor/smoke/calibration.json --work_dir runs/smoke --resume_dir runs/smoke/resume && python scripts/aaai27/score_texts.py --model monitor/smoke --texts inputs/val_texts.jsonl --out out/smoke/val_scores.jsonl --limit 5 && for i in 1 2; do python scripts/attack.py --model monitor/smoke --calib monitor/smoke/calibration.json --data data/train_pool.jsonl --scores compute --n 3 --budget 3 --threshold 0.5 --resume --scope agent --out out/smoke/val_agent.jsonl; done && python scripts/attack.py --model monitor/smoke --calib monitor/smoke/calibration.json --data data/train_pool.jsonl --scores compute --n 3 --budget 3 --threshold 0.5 --resume --scope agent --fluent_k 20 --out out/smoke/f_val_agent.jsonl && python scripts/attack.py --model monitor/smoke --calib monitor/smoke/calibration.json --data data/train_pool.jsonl --scores compute --n 3 --budget 3 --threshold 0.5 --resume --scope all --out out/smoke/val_all.jsonl ) > logs/smoke_chain.log 2>&1 ; R=$? ; tail -5 logs/smoke_chain.log ; exit $R",
+     "logs/smoke.log"
+    ]
+   ],
+   "outputs": [
+    "out/smoke/val_scores.jsonl",
+    "out/smoke/val_agent.jsonl",
+    "out/smoke/f_val_agent.jsonl",
+    "out/smoke/val_all.jsonl",
+    "logs/smoke_chain.log",
+    "out/resume_test/cmp_A_B.json",
+    "out/resume_test/cmp_A_C.json",
+    "out/resume_test/cmp_A_A2.json"
+   ]
+  },
+  {
+   "name": "train1",
+   "needs": [
+    "smoke"
+   ],
+   "stall": 600,
+   "cmds": [
+    [
+     "( [ -f monitor/seed1/calibration.json ] || python scripts/train_monitor.py --epochs 3 --bs 16 --accum 1 --max_minutes 60 --seed 1 --out monitor/seed1 --calib_out monitor/seed1/calibration.json --work_dir runs/seed1 --resume_dir runs/seed1/resume ) && tar czf monitor/seed1_small.tgz -C monitor/seed1 --exclude model.safetensors . && rm -f runs/seed1/resume/state.pt",
+     "logs/train1.log"
+    ]
+   ],
+   "outputs": [
+    "runs/seed1/train_log.jsonl",
+    "monitor/seed1_small.tgz",
+    "monitor/seed1/calibration.json"
+   ],
+   "big_outputs": [
+    [
+     "monitor/seed1/model.safetensors",
+     "{repo}/results/aaai27/job8/models/seed1/model.safetensors"
+    ]
+   ],
+   "restore": [
+    "monitor/seed1_small.tgz"
+   ],
+   "restore_cmd": "mkdir -p monitor/seed1 && tar xzf monitor/seed1_small.tgz -C monitor/seed1 && ls monitor/seed1"
+  },
+  {
+   "name": "evals1",
+   "needs": [
+    "train1"
+   ],
+   "stall": 900,
+   "resume": true,
+   "cmds": [
+    [
+     "python scripts/aaai27/score_texts.py --model monitor/seed1 --texts inputs/val_texts.jsonl --out out/seed1/val_scores.jsonl && python scripts/eval_monitor.py --model monitor/seed1 --calib monitor/seed1/calibration.json --tag seed1 --out out/seed1",
+     "out/seed1/evals.log"
+    ]
+   ],
+   "outputs": [
+    "out/seed1/val_scores.jsonl",
+    "out/seed1/baseline_seed1.json",
+    "out/seed1/heldout_scores_seed1.jsonl"
+   ]
+  },
+  {
+   "name": "atk1_val_agent",
+   "needs": [
+    "train1"
+   ],
+   "stall": 900,
+   "resume": true,
+   "cmds": [
+    [
+     "BAR=$(python -c \"import json;print(min(0.5, json.load(open('monitor/seed1/calibration.json'))['threshold']))\") && python scripts/attack.py --model monitor/seed1 --calib monitor/seed1/calibration.json --data data/train_pool.jsonl --scores compute --n 200 --budget 20 --threshold $BAR --resume --scope agent --max_minutes 300 --out out/seed1/attack/val_agent.jsonl",
+     "out/seed1/attack/val_agent.log"
+    ]
+   ],
+   "outputs": [
+    "out/seed1/attack/val_agent.jsonl"
+   ]
+  },
+  {
+   "name": "atk1_f_val_agent",
+   "needs": [
+    "train1"
+   ],
+   "stall": 900,
+   "resume": true,
+   "cmds": [
+    [
+     "BAR=$(python -c \"import json;print(min(0.5, json.load(open('monitor/seed1/calibration.json'))['threshold']))\") && python scripts/attack.py --model monitor/seed1 --calib monitor/seed1/calibration.json --data data/train_pool.jsonl --scores compute --n 200 --budget 20 --threshold $BAR --resume --scope agent --fluent_k 20 --max_minutes 300 --out out/seed1/attack/f_val_agent.jsonl",
+     "out/seed1/attack/f_val_agent.log"
+    ]
+   ],
+   "outputs": [
+    "out/seed1/attack/f_val_agent.jsonl"
+   ]
+  },
+  {
+   "name": "atk1_val_all",
+   "needs": [
+    "train1"
+   ],
+   "stall": 900,
+   "resume": true,
+   "cmds": [
+    [
+     "BAR=$(python -c \"import json;print(min(0.5, json.load(open('monitor/seed1/calibration.json'))['threshold']))\") && python scripts/attack.py --model monitor/seed1 --calib monitor/seed1/calibration.json --data data/train_pool.jsonl --scores compute --n 200 --budget 20 --threshold $BAR --resume --scope all --max_minutes 200 --out out/seed1/attack/val_all.jsonl",
+     "out/seed1/attack/val_all.log"
+    ]
+   ],
+   "outputs": [
+    "out/seed1/attack/val_all.jsonl"
+   ]
+  },
+  {
+   "name": "train2",
+   "needs": [
+    "smoke"
+   ],
+   "stall": 600,
+   "cmds": [
+    [
+     "( [ -f monitor/seed2/calibration.json ] || python scripts/train_monitor.py --epochs 3 --bs 16 --accum 1 --max_minutes 60 --seed 2 --out monitor/seed2 --calib_out monitor/seed2/calibration.json --work_dir runs/seed2 --resume_dir runs/seed2/resume ) && tar czf monitor/seed2_small.tgz -C monitor/seed2 --exclude model.safetensors . && rm -f runs/seed2/resume/state.pt",
+     "logs/train2.log"
+    ]
+   ],
+   "outputs": [
+    "runs/seed2/train_log.jsonl",
+    "monitor/seed2_small.tgz",
+    "monitor/seed2/calibration.json"
+   ],
+   "big_outputs": [
+    [
+     "monitor/seed2/model.safetensors",
+     "{repo}/results/aaai27/job8/models/seed2/model.safetensors"
+    ]
+   ],
+   "restore": [
+    "monitor/seed2_small.tgz"
+   ],
+   "restore_cmd": "mkdir -p monitor/seed2 && tar xzf monitor/seed2_small.tgz -C monitor/seed2 && ls monitor/seed2"
+  },
+  {
+   "name": "evals2",
+   "needs": [
+    "train2"
+   ],
+   "stall": 900,
+   "resume": true,
+   "cmds": [
+    [
+     "python scripts/aaai27/score_texts.py --model monitor/seed2 --texts inputs/val_texts.jsonl --out out/seed2/val_scores.jsonl && python scripts/eval_monitor.py --model monitor/seed2 --calib monitor/seed2/calibration.json --tag seed2 --out out/seed2",
+     "out/seed2/evals.log"
+    ]
+   ],
+   "outputs": [
+    "out/seed2/val_scores.jsonl",
+    "out/seed2/baseline_seed2.json",
+    "out/seed2/heldout_scores_seed2.jsonl"
+   ]
+  },
+  {
+   "name": "atk2_val_agent",
+   "needs": [
+    "train2"
+   ],
+   "stall": 900,
+   "resume": true,
+   "cmds": [
+    [
+     "BAR=$(python -c \"import json;print(min(0.5, json.load(open('monitor/seed2/calibration.json'))['threshold']))\") && python scripts/attack.py --model monitor/seed2 --calib monitor/seed2/calibration.json --data data/train_pool.jsonl --scores compute --n 200 --budget 20 --threshold $BAR --resume --scope agent --max_minutes 300 --out out/seed2/attack/val_agent.jsonl",
+     "out/seed2/attack/val_agent.log"
+    ]
+   ],
+   "outputs": [
+    "out/seed2/attack/val_agent.jsonl"
+   ]
+  },
+  {
+   "name": "atk2_f_val_agent",
+   "needs": [
+    "train2"
+   ],
+   "stall": 900,
+   "resume": true,
+   "cmds": [
+    [
+     "BAR=$(python -c \"import json;print(min(0.5, json.load(open('monitor/seed2/calibration.json'))['threshold']))\") && python scripts/attack.py --model monitor/seed2 --calib monitor/seed2/calibration.json --data data/train_pool.jsonl --scores compute --n 200 --budget 20 --threshold $BAR --resume --scope agent --fluent_k 20 --max_minutes 300 --out out/seed2/attack/f_val_agent.jsonl",
+     "out/seed2/attack/f_val_agent.log"
+    ]
+   ],
+   "outputs": [
+    "out/seed2/attack/f_val_agent.jsonl"
+   ]
+  },
+  {
+   "name": "atk2_val_all",
+   "needs": [
+    "train2"
+   ],
+   "stall": 900,
+   "resume": true,
+   "cmds": [
+    [
+     "BAR=$(python -c \"import json;print(min(0.5, json.load(open('monitor/seed2/calibration.json'))['threshold']))\") && python scripts/attack.py --model monitor/seed2 --calib monitor/seed2/calibration.json --data data/train_pool.jsonl --scores compute --n 200 --budget 20 --threshold $BAR --resume --scope all --max_minutes 200 --out out/seed2/attack/val_all.jsonl",
+     "out/seed2/attack/val_all.log"
+    ]
+   ],
+   "outputs": [
+    "out/seed2/attack/val_all.jsonl"
+   ]
+  }
+ ]
+}
