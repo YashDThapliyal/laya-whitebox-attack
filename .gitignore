@@ -7,3 +7,7 @@ monitor/checkpoints/
 *.bin
 *.pt
 .DS_Store
+.env
+.env.*
+# regenerable AAAI-27 scoring inputs (scripts/aaai27/build_score_inputs.py), ~80 MB
+results/aaai27/inputs/
