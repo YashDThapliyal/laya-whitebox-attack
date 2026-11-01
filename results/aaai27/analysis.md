@@ -51,7 +51,7 @@ What changes with SHADE-80:
 
 Model: `success ~ editable_frac + n_windows + clean_margin + source`. InjecAgent is the reference source. Continuous predictors are z-scored on the 197 fitted traces, so coefficients are log-odds per SD. The SDs are editable fraction 0.153, window count 6.9, and clean margin 1.34 logit units.
 
-**Firth-penalized fits are the primary estimates.** In the constrained attack, ToolEmu (21/21) and R-Judge (9/9) succeed on every trace, so unpenalized maximum likelihood doesn't exist there. In the unconstrained attack, ML fits the full sample, but 848 of 2,000 bootstrap resamples were separated and failed to fit, so its bootstrap CIs are biased. Firth fits every resample except 1 (unconstrained) and 11 (constrained). The ML estimates are in `phaseA_stats.json`; they are within about 0.4 log-odds of the Firth ones and lead to the same conclusions.
+**Firth-penalized fits are the primary estimates.** The regression uses Firth's penalized likelihood because of complete separation on ToolEmu and R-Judge: in the constrained attack, ToolEmu (21/21) and R-Judge (9/9) succeed on every trace, so unpenalized maximum likelihood doesn't exist there. In the unconstrained attack the separation isn't complete in the full sample (ToolEmu 19/21, R-Judge 8/9), so ML fits it, but 848 of 2,000 bootstrap resamples were separated and failed to fit, so its bootstrap CIs are biased. Firth fits every resample except 1 (unconstrained) and 11 (constrained). The ML estimates are in `phaseA_stats.json`; they are within about 0.4 log-odds of the Firth ones and lead to the same conclusions.
 
 **Primary: unconstrained, budget 20 for every source (n = 197, 75 successes)**
 

@@ -103,7 +103,7 @@ Details: [`fluent_edit_review.md`](fluent_edit_review.md) (the "Human spot-check
 
 ```bash
 uv venv --python 3.11 .venv && source .venv/bin/activate
-uv pip install laya torch transformers datasets scikit-learn matplotlib huggingface_hub pandas scipy
+uv pip install laya torch transformers datasets scikit-learn matplotlib huggingface_hub pandas scipy statsmodels anthropic
 export PYTHONPATH=scripts
 ```
 
