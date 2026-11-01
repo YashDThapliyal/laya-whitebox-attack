@@ -1,0 +1,202 @@
+{
+ "meta": {
+  "z_op": 4.610336862921551,
+  "clean_points_max_abs_dz": 0.008576393127441406,
+  "n_clean_points": 1021,
+  "note": "clean points rescore to the attack's recorded margin, so any gap at 'op' is re-tokenization"
+ },
+ "sets": {
+  "agent_c_shade80|all": {
+   "n": 80,
+   "recorded": 15,
+   "roundtrip_same_ids": 14,
+   "text_realizable": 14
+  },
+  "agent_c_shade80|shade-arena": {
+   "n": 80,
+   "recorded": 15,
+   "roundtrip_same_ids": 14,
+   "text_realizable": 14
+  },
+  "agent_c_val|all": {
+   "n": 117,
+   "recorded": 71,
+   "roundtrip_same_ids": 66,
+   "text_realizable": 68
+  },
+  "agent_c_val|injecagent": {
+   "n": 87,
+   "recorded": 41,
+   "roundtrip_same_ids": 36,
+   "text_realizable": 38
+  },
+  "agent_c_val|r-judge": {
+   "n": 9,
+   "recorded": 9,
+   "roundtrip_same_ids": 9,
+   "text_realizable": 9
+  },
+  "agent_c_val|toolemu": {
+   "n": 21,
+   "recorded": 21,
+   "roundtrip_same_ids": 21,
+   "text_realizable": 21
+  },
+  "agent_u_shade80|all": {
+   "n": 80,
+   "recorded": 14,
+   "roundtrip_same_ids": 10,
+   "text_realizable": 14
+  },
+  "agent_u_shade80|shade-arena": {
+   "n": 80,
+   "recorded": 14,
+   "roundtrip_same_ids": 10,
+   "text_realizable": 14
+  },
+  "agent_u_val|all": {
+   "n": 117,
+   "recorded": 65,
+   "roundtrip_same_ids": 56,
+   "text_realizable": 57
+  },
+  "agent_u_val|injecagent": {
+   "n": 87,
+   "recorded": 38,
+   "roundtrip_same_ids": 30,
+   "text_realizable": 31
+  },
+  "agent_u_val|r-judge": {
+   "n": 9,
+   "recorded": 8,
+   "roundtrip_same_ids": 8,
+   "text_realizable": 8
+  },
+  "agent_u_val|toolemu": {
+   "n": 21,
+   "recorded": 19,
+   "roundtrip_same_ids": 18,
+   "text_realizable": 18
+  },
+  "agent_u_val_t05|all": {
+   "n": 117,
+   "recorded": 64,
+   "roundtrip_same_ids": 55,
+   "text_realizable": 56
+  },
+  "agent_u_val_t05|injecagent": {
+   "n": 87,
+   "recorded": 37,
+   "roundtrip_same_ids": 29,
+   "text_realizable": 30
+  },
+  "agent_u_val_t05|r-judge": {
+   "n": 9,
+   "recorded": 8,
+   "roundtrip_same_ids": 8,
+   "text_realizable": 8
+  },
+  "agent_u_val_t05|toolemu": {
+   "n": 21,
+   "recorded": 19,
+   "roundtrip_same_ids": 18,
+   "text_realizable": 18
+  },
+  "any_c_shade80|all": {
+   "n": 79,
+   "recorded": 53,
+   "roundtrip_same_ids": 26,
+   "text_realizable": 35
+  },
+  "any_c_shade80|shade-arena": {
+   "n": 79,
+   "recorded": 53,
+   "roundtrip_same_ids": 26,
+   "text_realizable": 35
+  },
+  "any_c_val|all": {
+   "n": 117,
+   "recorded": 114,
+   "roundtrip_same_ids": 99,
+   "text_realizable": 105
+  },
+  "any_c_val|injecagent": {
+   "n": 87,
+   "recorded": 84,
+   "roundtrip_same_ids": 69,
+   "text_realizable": 75
+  },
+  "any_c_val|r-judge": {
+   "n": 9,
+   "recorded": 9,
+   "roundtrip_same_ids": 9,
+   "text_realizable": 9
+  },
+  "any_c_val|toolemu": {
+   "n": 21,
+   "recorded": 21,
+   "roundtrip_same_ids": 21,
+   "text_realizable": 21
+  },
+  "any_u_shade80|all": {
+   "n": 80,
+   "recorded": 53,
+   "roundtrip_same_ids": 31,
+   "text_realizable": 40
+  },
+  "any_u_shade80|shade-arena": {
+   "n": 80,
+   "recorded": 53,
+   "roundtrip_same_ids": 31,
+   "text_realizable": 40
+  },
+  "any_u_val|all": {
+   "n": 117,
+   "recorded": 117,
+   "roundtrip_same_ids": 95,
+   "text_realizable": 108
+  },
+  "any_u_val|injecagent": {
+   "n": 87,
+   "recorded": 87,
+   "roundtrip_same_ids": 68,
+   "text_realizable": 79
+  },
+  "any_u_val|r-judge": {
+   "n": 9,
+   "recorded": 9,
+   "roundtrip_same_ids": 7,
+   "text_realizable": 8
+  },
+  "any_u_val|toolemu": {
+   "n": 21,
+   "recorded": 21,
+   "roundtrip_same_ids": 20,
+   "text_realizable": 21
+  },
+  "any_u_val_t05|all": {
+   "n": 117,
+   "recorded": 117,
+   "roundtrip_same_ids": 95,
+   "text_realizable": 108
+  },
+  "any_u_val_t05|injecagent": {
+   "n": 87,
+   "recorded": 87,
+   "roundtrip_same_ids": 68,
+   "text_realizable": 79
+  },
+  "any_u_val_t05|r-judge": {
+   "n": 9,
+   "recorded": 9,
+   "roundtrip_same_ids": 7,
+   "text_realizable": 8
+  },
+  "any_u_val_t05|toolemu": {
+   "n": 21,
+   "recorded": 21,
+   "roundtrip_same_ids": 20,
+   "text_realizable": 21
+  }
+ }
+}

@@ -1,0 +1,37 @@
+{
+ "per_source": {
+  "injecagent": {
+   "n": 176,
+   "auroc_tf32": 0.9997417355371901,
+   "published": 0.99974173553719,
+   "published_windowed_val": 0.9997417355371901,
+   "diff": 1.1102230246251565e-16
+  },
+  "r-judge": {
+   "n": 35,
+   "auroc_tf32": 0.5230263157894737,
+   "published": 0.5197368421052632,
+   "published_windowed_val": 0.5230263157894737,
+   "diff": 0.003289473684210509
+  },
+  "shade-arena": {
+   "n": 1448,
+   "auroc_tf32": 0.576938285694264,
+   "published": 0.5768919855743841,
+   "published_windowed_val": null,
+   "diff": 4.6300119879827406e-05
+  },
+  "toolemu": {
+   "n": 44,
+   "auroc_tf32": 1.0,
+   "published": 1.0,
+   "published_windowed_val": 1.0,
+   "diff": 0.0
+  }
+ },
+ "shade_per_trace": {
+  "n": 1448,
+  "mean_abs_dz": 0.027505025843889017,
+  "max_abs_dz": 0.9021313786506653
+ }
+}

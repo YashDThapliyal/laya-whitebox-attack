@@ -1,0 +1,24 @@
+device cuda  model monitor/run2  pending 6735
+64/6735 texts  80 windows  33.1 win/s  0.0 min
+128/6735 texts  158 windows  36.3 win/s  0.1 min
+192/6735 texts  232 windows  37.5 win/s  0.1 min
+256/6735 texts  308 windows  38.1 win/s  0.1 min
+320/6735 texts  378 windows  38.5 win/s  0.2 min
+384/6735 texts  453 windows  38.8 win/s  0.2 min
+448/6735 texts  523 windows  39.0 win/s  0.2 min
+512/6735 texts  595 windows  39.2 win/s  0.3 min
+576/6735 texts  669 windows  39.3 win/s  0.3 min
+640/6735 texts  744 windows  39.6 win/s  0.3 min
+704/6735 texts  808 windows  41.3 win/s  0.3 min
+768/6735 texts  1152 windows  41.2 win/s  0.5 min
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (11120 > 8192). Running this sequence through the model will result in indexing errors
+832/6735 texts  3231 windows  41.0 win/s  1.3 min
+896/6735 texts  5569 windows  41.0 win/s  2.3 min
+960/6735 texts  8212 windows  41.0 win/s  3.3 min
+1024/6735 texts  10746 windows  41.0 win/s  4.4 min
+1088/6735 texts  13602 windows  41.0 win/s  5.5 min
+1152/6735 texts  15674 windows  41.0 win/s  6.4 min
+1216/6735 texts  17996 windows  41.0 win/s  7.3 min
+1280/6735 texts  20418 windows  41.0 win/s  8.3 min
+1344/6735 texts  22602 windows  41.0 win/s  9.2 min
+1408/6735 texts  24337 windows  41.0 win/s  9.9 min

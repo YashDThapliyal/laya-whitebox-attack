@@ -1,0 +1,40 @@
+device cuda  model monitor/run2  pending 2255
+64/2255 texts  930 windows  111.8 win/s  0.1 min
+[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (8833 > 8192). Running this sequence through the model will result in indexing errors
+128/2255 texts  1797 windows  122.3 win/s  0.2 min
+192/2255 texts  4820 windows  130.6 win/s  0.6 min
+256/2255 texts  8738 windows  132.9 win/s  1.1 min
+320/2255 texts  11743 windows  133.6 win/s  1.5 min
+384/2255 texts  18137 windows  134.4 win/s  2.2 min
+448/2255 texts  19448 windows  134.5 win/s  2.4 min
+512/2255 texts  19552 windows  134.4 win/s  2.4 min
+576/2255 texts  19628 windows  134.4 win/s  2.4 min
+640/2255 texts  19704 windows  134.4 win/s  2.4 min
+704/2255 texts  19796 windows  134.3 win/s  2.5 min
+768/2255 texts  20392 windows  134.3 win/s  2.5 min
+832/2255 texts  21299 windows  134.3 win/s  2.6 min
+896/2255 texts  21707 windows  134.3 win/s  2.7 min
+960/2255 texts  21779 windows  134.2 win/s  2.7 min
+1024/2255 texts  21857 windows  134.2 win/s  2.7 min
+1088/2255 texts  21939 windows  134.2 win/s  2.7 min
+1152/2255 texts  22026 windows  134.2 win/s  2.7 min
+1216/2255 texts  22113 windows  134.2 win/s  2.7 min
+1280/2255 texts  22209 windows  134.1 win/s  2.8 min
+1344/2255 texts  22285 windows  134.1 win/s  2.8 min
+1408/2255 texts  22358 windows  134.1 win/s  2.8 min
+1472/2255 texts  22442 windows  134.1 win/s  2.8 min
+1536/2255 texts  22526 windows  134.1 win/s  2.8 min
+1600/2255 texts  22615 windows  134.0 win/s  2.8 min
+1664/2255 texts  22902 windows  134.0 win/s  2.8 min
+1728/2255 texts  23758 windows  134.0 win/s  3.0 min
+1792/2255 texts  24585 windows  134.0 win/s  3.1 min
+1856/2255 texts  25428 windows  134.0 win/s  3.2 min
+1920/2255 texts  26214 windows  134.0 win/s  3.3 min
+1984/2255 texts  27067 windows  134.0 win/s  3.4 min
+2048/2255 texts  27894 windows  134.0 win/s  3.5 min
+2112/2255 texts  28732 windows  133.9 win/s  3.6 min
+2176/2255 texts  29128 windows  133.9 win/s  3.6 min
+2240/2255 texts  29225 windows  133.9 win/s  3.6 min
+2255/2255 texts  29252 windows  133.9 win/s  3.6 min
+done
+JOB_EXIT=0
