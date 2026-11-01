@@ -1,0 +1,16 @@
+{
+ "done": [
+  "smoke",
+  "score"
+ ],
+ "skipped": {},
+ "fails": {},
+ "reclaims": 0,
+ "vms": [
+  "laya71",
+  "laya72",
+  "laya73"
+ ],
+ "vm": null,
+ "vm_ready": false
+}

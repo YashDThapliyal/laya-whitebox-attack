@@ -1,0 +1,10 @@
+== logs/smoke_run1.log
+device cuda  model monitor/run1  pending 8
+8/8 texts  11 windows  8.2 win/s  0.0 min
+done
+== logs/smoke_zeroshot.log
+Fetching 15 files:  13%|█▎        | 2/15 [00:00<00:00, 13.42it/s]Fetching 15 files:  73%|███████▎  | 11/15 [00:00<00:00, 50.57it/s]Fetching 15 files: 100%|██████████| 15/15 [00:05<00:00,  2.85it/s]
+device cuda  model base  pending 8
+8/8 texts  11 windows  7.6 win/s  0.0 min
+done
+JOB_EXIT=0

@@ -1,0 +1,120 @@
+13:41:20 supervisor start: laya7  done=[]
+13:41:23 newvm laya71: NEWVM_OK laya71 endpoint=gpu-a100-s-ft-ass1b0-1xwft5aep5usa keepalive_pid=99756
+13:41:35   poll 13:41:35 POLL_EXIT 2 SESSION_GONE download reports the session is gone (laya71)
+13:41:35 SUPERVISOR ERROR: RuntimeError: setup failed (poll rc 2)
+13:41:36 stopped laya71
+13:42:52 supervisor start: laya7  done=[]
+13:42:56 newvm laya72: NEWVM_OK laya72 endpoint=gpu-a100-s-ft-usc1b0-2pkr5upl4pf3c keepalive_pid=2221
+13:43:01   poll 13:43:01 bal=104.69
+13:44:03   poll 13:44:03 bal=104.69
+13:44:44 supervisor start: laya7  done=[]
+13:44:50   poll 13:44:50 bal=104.69 tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+13:45:52   poll 13:45:52 bal=104.69 JOB_EXIT=0
+13:45:52   poll 13:45:52 POLL_EXIT 0 FINISHED
+13:50:30 pushed run1_model.safetensors (33 chunks, sha ok)
+13:50:32 step smoke: connection/session problem: upload failed: /private/tmp/claude-501/-Users-yash-Documents-laya-grad-break/bccc3f37-6b53-4a6a-ae6d-7204b38028bd/scratchpad/steps/laya7_smoke.sh
+13:50:32 step smoke: VM reclaimed (reclaim #1), relaunching; not a job failure
+13:50:38   poll 13:50:38 bal=103.7 tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+13:51:42   poll 13:51:42 bal=103.7 JOB_EXIT=0
+13:51:42   poll 13:51:42 POLL_EXIT 0 FINISHED
+13:56:16 pushed run1_model.safetensors (33 chunks, sha ok)
+13:56:18 step smoke: connection/session problem: upload failed: /private/tmp/claude-501/-Users-yash-Documents-laya-grad-break/bccc3f37-6b53-4a6a-ae6d-7204b38028bd/scratchpad/steps/laya7_smoke.sh
+13:56:18 step smoke: VM reclaimed (reclaim #2), relaunching; not a job failure
+13:56:24   poll 13:56:24 bal=102.58 tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+13:57:26   poll 13:57:26 bal=101.45 JOB_EXIT=0
+13:57:26   poll 13:57:26 POLL_EXIT 0 FINISHED
+14:02:22 pushed run1_model.safetensors (33 chunks, sha ok)
+14:02:24 step smoke: connection/session problem: upload failed: /private/tmp/claude-501/-Users-yash-Documents-laya-grad-break/bccc3f37-6b53-4a6a-ae6d-7204b38028bd/scratchpad/steps/laya7_smoke.sh
+14:02:24 step smoke: VM reclaimed (reclaim #3), relaunching; not a job failure
+14:02:30   poll 14:02:30 bal=100.33 tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+14:03:32   poll 14:03:32 bal=100.33 JOB_EXIT=0
+14:03:32   poll 14:03:32 POLL_EXIT 0 FINISHED
+14:08:00 pushed run1_model.safetensors (33 chunks, sha ok)
+14:08:03 step smoke: connection/session problem: upload failed: /private/tmp/claude-501/-Users-yash-Documents-laya-grad-break/bccc3f37-6b53-4a6a-ae6d-7204b38028bd/scratchpad/steps/laya7_smoke.sh
+14:08:03 step smoke: VM reclaimed (reclaim #4), relaunching; not a job failure
+14:08:09   poll 14:08:09 bal=99.23 tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+14:09:11   poll 14:09:11 bal=99.23 JOB_EXIT=0
+14:09:11   poll 14:09:11 POLL_EXIT 0 FINISHED
+14:14:16 pushed run1_model.safetensors (33 chunks, sha ok)
+14:14:18 step smoke: connection/session problem: upload failed: /private/tmp/claude-501/-Users-yash-Documents-laya-grad-break/bccc3f37-6b53-4a6a-ae6d-7204b38028bd/scratchpad/steps/laya7_smoke.sh
+14:14:18 step smoke: VM reclaimed (reclaim #5), relaunching; not a job failure
+14:14:24   poll 14:14:24 bal=98.09 tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+14:15:26   poll 14:15:26 bal=98.09 JOB_EXIT=0
+14:15:26   poll 14:15:26 POLL_EXIT 0 FINISHED
+14:21:00 pushed run1_model.safetensors (33 chunks, sha ok)
+14:21:03 step smoke: connection/session problem: upload failed: /private/tmp/claude-501/-Users-yash-Documents-laya-grad-break/bccc3f37-6b53-4a6a-ae6d-7204b38028bd/scratchpad/steps/laya7_smoke.sh
+14:21:03 step smoke: VM reclaimed (reclaim #6), relaunching; not a job failure
+14:21:09   poll 14:21:09 bal=96.97 tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+14:22:11   poll 14:22:11 bal=95.84 JOB_EXIT=0
+14:22:11   poll 14:22:11 POLL_EXIT 0 FINISHED
+14:26:35 pushed run1_model.safetensors (33 chunks, sha ok)
+14:26:39 step smoke: connection/session problem: upload failed: /private/tmp/claude-501/-Users-yash-Documents-laya-grad-break/bccc3f37-6b53-4a6a-ae6d-7204b38028bd/scratchpad/steps/laya7_smoke.sh
+14:26:39 step smoke: VM reclaimed (reclaim #7), relaunching; not a job failure
+14:26:46   poll 14:26:46 bal=95.84 tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+14:27:47   poll 14:27:47 bal=94.71 JOB_EXIT=0
+14:27:47   poll 14:27:47 POLL_EXIT 0 FINISHED
+14:33:38 pushed run1_model.safetensors (33 chunks, sha ok)
+14:33:41 step smoke: connection/session problem: upload failed: /private/tmp/claude-501/-Users-yash-Documents-laya-grad-break/bccc3f37-6b53-4a6a-ae6d-7204b38028bd/scratchpad/steps/laya7_smoke.sh
+14:33:41 step smoke: VM reclaimed (reclaim #8), relaunching; not a job failure
+14:33:48   poll 14:33:48 bal=93.6 tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+14:34:50   poll 14:34:50 bal=93.6 JOB_EXIT=0
+14:34:50   poll 14:34:50 POLL_EXIT 0 FINISHED
+14:44:33 pushed run1_model.safetensors (33 chunks, sha ok)
+14:44:35 step smoke: connection/session problem: upload failed: /private/tmp/claude-501/-Users-yash-Documents-laya-grad-break/bccc3f37-6b53-4a6a-ae6d-7204b38028bd/scratchpad/steps/laya7_smoke.sh
+14:44:35 step smoke: VM reclaimed (reclaim #9), relaunching; not a job failure
+14:44:45   poll 14:44:45 bal=91.36 tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+14:45:48   poll 14:45:48 bal=91.36 JOB_EXIT=0
+14:45:48   poll 14:45:48 POLL_EXIT 0 FINISHED
+14:56:22 pushed run1_model.safetensors (33 chunks, sha ok)
+14:56:25 step smoke: connection/session problem: upload failed: /private/tmp/claude-501/-Users-yash-Documents-laya-grad-break/bccc3f37-6b53-4a6a-ae6d-7204b38028bd/scratchpad/steps/laya7_smoke.sh
+14:56:25 step smoke: VM reclaimed (reclaim #10), relaunching; not a job failure
+14:56:31   poll 14:56:31 bal=89.13 tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+14:57:33   poll 14:57:33 bal=88.0 JOB_EXIT=0
+14:57:33   poll 14:57:33 POLL_EXIT 0 FINISHED
+15:02:56 pushed run1_model.safetensors (33 chunks, sha ok)
+15:02:58 step smoke: connection/session problem: upload failed: /private/tmp/claude-501/-Users-yash-Documents-laya-grad-break/bccc3f37-6b53-4a6a-ae6d-7204b38028bd/scratchpad/steps/laya7_smoke.sh
+15:02:58 step smoke: VM reclaimed (reclaim #11), relaunching; not a job failure
+15:03:05   poll 15:03:05 bal=86.88 tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+15:04:07   poll 15:04:07 bal=86.88 JOB_EXIT=0
+15:04:07   poll 15:04:07 POLL_EXIT 0 FINISHED
+15:10:24 pushed run1_model.safetensors (33 chunks, sha ok)
+15:10:26 step smoke: connection/session problem: upload failed: /private/tmp/claude-501/-Users-yash-Documents-laya-grad-break/bccc3f37-6b53-4a6a-ae6d-7204b38028bd/scratchpad/steps/laya7_smoke.sh
+15:10:26 step smoke: VM reclaimed (reclaim #12), relaunching; not a job failure
+15:10:33   poll 15:10:33 bal=85.76 tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+15:11:35   poll 15:11:35 bal=85.76 JOB_EXIT=0
+15:11:35   poll 15:11:35 POLL_EXIT 0 FINISHED
+15:15:43 NOTE: reclaims #1-12 above were false: the step-script upload failed (missing remote dir, HTTP 500) on a live VM. Supervisor fixed; counter reset; laya72 setup and weights verified.
+15:16:32 supervisor start: laya7  done=[]
+15:16:38 step smoke: launched on laya72
+15:16:47   poll 15:16:47 bal=84.63
+15:17:52   poll 15:17:52 bal=83.5 JOB_EXIT=1
+15:17:57   poll 15:17:57 POLL_EXIT 1 JOB_FAILED JOB_EXIT=1
+15:17:57 step smoke: JOB_FAILED (failure 1/2)
+15:18:09 step smoke: launched on laya72
+15:18:18   poll 15:18:18 bal=83.5
+15:19:26   poll 15:19:26 bal=83.5 JOB_EXIT=1
+15:19:29   poll 15:19:29 POLL_EXIT 1 JOB_FAILED JOB_EXIT=1
+15:19:29 step smoke: JOB_FAILED (failure 2/2)
+15:19:29 step smoke: skipped
+15:19:29 step score: skipped, a dependency did not finish
+15:19:30 stopped laya72
+15:19:30 supervisor end: done=[] skipped={'smoke': 'failed twice', 'score': 'dependency not done'} reclaims=0
+15:38:46 NOTE: smoke failures 1-2 were a spec bug (smoke/ folder not created); per the user they do not count, state reset for the rerun
+15:39:14 supervisor start: laya7  done=[]
+15:39:25 newvm laya73: NEWVM_OK laya73 endpoint=gpu-a100-s-ft-usc1b0-1ux23829980pv heartbeat_pid=22317
+15:39:47   poll 15:39:47 bal=183.18 task=18.61 tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+15:40:51   poll 15:40:51 bal=183.18 task=18.73 JOB_EXIT=0
+15:40:51   poll 15:40:51 POLL_EXIT 0 FINISHED
+15:47:04 pushed run1_model.safetensors (33 chunks, sha ok)
+15:47:13 step smoke: launched on laya73
+15:47:43   poll 15:47:43 bal=182.37 task=19.50 JOB_EXIT=0
+15:47:54   poll 15:47:54 POLL_EXIT 0 FINISHED
+15:47:55 step smoke: done
+15:48:10 step score: launched on laya73
+15:48:32   poll 15:48:32 bal=182.37 task=19.59
+15:50:05   poll 15:50:05 bal=182.37 task=19.77 HB 576/1390 texts  2467 windows  63.7 win/s  0.6 min|576/1390 texts  2467 windows  63.7 win/s  0.6 min
+15:51:37   poll 15:51:37 bal=182.37 task=19.94 JOB_EXIT=0
+15:51:43   poll 15:51:43 POLL_EXIT 0 FINISHED
+15:51:43 step score: done
+15:51:45 stopped laya73
+15:51:45 supervisor end: done=['smoke', 'score'] skipped={} reclaims=0

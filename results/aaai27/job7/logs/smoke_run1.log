@@ -1,0 +1,3 @@
+device cuda  model monitor/run1  pending 8
+8/8 texts  11 windows  8.2 win/s  0.0 min
+done

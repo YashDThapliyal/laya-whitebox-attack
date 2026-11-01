@@ -1,0 +1,25 @@
+Fetching 15 files:   0%|          | 0/15 [00:00<?, ?it/s]Fetching 15 files: 100%|██████████| 15/15 [00:00<00:00, 1763.15it/s]
+device cuda  model base  pending 1390
+64/1390 texts  101 windows  56.2 win/s  0.0 min
+128/1390 texts  318 windows  61.8 win/s  0.1 min
+192/1390 texts  1232 windows  63.2 win/s  0.3 min
+256/1390 texts  1508 windows  63.3 win/s  0.4 min
+320/1390 texts  1612 windows  63.4 win/s  0.4 min
+384/1390 texts  1688 windows  63.5 win/s  0.4 min
+448/1390 texts  1764 windows  63.6 win/s  0.5 min
+512/1390 texts  1857 windows  63.7 win/s  0.5 min
+576/1390 texts  2467 windows  63.7 win/s  0.6 min
+640/1390 texts  3374 windows  63.6 win/s  0.9 min
+704/1390 texts  3770 windows  63.6 win/s  1.0 min
+768/1390 texts  3871 windows  63.6 win/s  1.0 min
+832/1390 texts  3962 windows  63.6 win/s  1.0 min
+896/1390 texts  4061 windows  63.7 win/s  1.1 min
+960/1390 texts  4140 windows  63.7 win/s  1.1 min
+1024/1390 texts  4234 windows  63.7 win/s  1.1 min
+1088/1390 texts  4646 windows  63.7 win/s  1.2 min
+1152/1390 texts  5569 windows  63.7 win/s  1.5 min
+1216/1390 texts  6462 windows  63.7 win/s  1.7 min
+1280/1390 texts  7299 windows  63.6 win/s  1.9 min
+1344/1390 texts  7387 windows  63.6 win/s  1.9 min
+1390/1390 texts  7464 windows  63.7 win/s  2.0 min
+done

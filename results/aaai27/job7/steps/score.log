@@ -1,0 +1,13 @@
+HB 576/1390 texts  2467 windows  63.7 win/s  0.6 min|576/1390 texts  2467 windows  63.7 win/s  0.6 min
+HB 1216/1390 texts  6462 windows  63.7 win/s  1.7 min|1216/1390 texts  6462 windows  63.7 win/s  1.7 min
+== logs/run1.log
+1280/1390 texts  7299 windows  63.7 win/s  1.9 min
+1344/1390 texts  7387 windows  63.7 win/s  1.9 min
+1390/1390 texts  7464 windows  63.7 win/s  2.0 min
+done
+== logs/zeroshot.log
+1280/1390 texts  7299 windows  63.6 win/s  1.9 min
+1344/1390 texts  7387 windows  63.6 win/s  1.9 min
+1390/1390 texts  7464 windows  63.7 win/s  2.0 min
+done
+JOB_EXIT=0
