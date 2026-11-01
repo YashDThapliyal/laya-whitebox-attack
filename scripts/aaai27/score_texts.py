@@ -17,6 +17,7 @@ import time
 from pathlib import Path
 
 import numpy as np
+import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import monitor_lib as ml
@@ -56,7 +57,9 @@ def pending_texts(args: argparse.Namespace) -> list[tuple[str, str]]:
 
 def main() -> None:
     args = parse_args()
-    ml.AMP = False
+    ml.AMP = False  # fp32 with TF32 matmuls, exactly as scripts/attack.py
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.backends.cudnn.allow_tf32 = True
     dev = ml.device()
     model_dir = ml.base_dir() if args.model == "base" else args.model
     model, _ = ml.load_model(model_dir, dev)
