@@ -1,21 +1,37 @@
-% Draft for "LLM Agents Under Threat in Cyberspace" @ AAAI-27 (limit: 7 pages).
-% Every number comes from ../results/aaai27/analysis.md; the Claims section there governs.
-% Swap this preamble for the AAAI author kit before submitting: its style file is not in this repo.
-\documentclass[letterpaper,twocolumn,10pt]{article}
-\usepackage[margin=0.75in,columnsep=0.25in]{geometry}
-\usepackage{times}
-\usepackage[T1]{fontenc}
-\usepackage{microtype,booktabs,url,array}
-\usepackage[normalem]{ulem}
-\usepackage{xcolor}
-\definecolor{frozen}{gray}{0.90}
-\newcommand{\edit}[2]{\sout{#1}\,\textbf{\underline{#2}}}
-\frenchspacing
-\title{\vspace{-1.5em}\Large\bfseries Monitors That Read an Agent's Narration Can Be Flipped\\ by Editing Only That Narration}
-\author{Anonymous authors}
-\date{}
+% "LLM Agents Under Threat in Cyberspace" @ AAAI-27: at most 7 pages excluding references, AAAI two-column, single-blind.
+% Every number comes from ../results/aaai27/analysis.md; the Claims section there governs. Transfer and random-control
+% numbers exclude R-Judge (job7_transfer_no_rjudge.json). Figure 1 is built separately: see figures/fig_example.tex.
+\documentclass[letterpaper]{article} % DO NOT CHANGE THIS
+\usepackage{aaai2027}  % DO NOT CHANGE THIS
+\usepackage[hyphens]{url}  % DO NOT CHANGE THIS
+\usepackage{graphicx} % DO NOT CHANGE THIS
+\urlstyle{rm} % DO NOT CHANGE THIS
+\def\UrlFont{\rm}  % DO NOT CHANGE THIS
+\usepackage{natbib}  % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\usepackage{caption} % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\frenchspacing  % DO NOT CHANGE THIS
+\setlength{\pdfpagewidth}{8.5in} % DO NOT CHANGE THIS
+\setlength{\pdfpageheight}{11in} % DO NOT CHANGE THIS
+\usepackage{booktabs}
+\pdfinfo{
+/TemplateVersion (2027.2)
+}
+
+\setcounter{secnumdepth}{2}
+
+\title{Monitors That Read an Agent's Narration Can Be Flipped\\by Editing Only That Narration}
+\author{
+    Yash Thapliyal
+}
+\affiliations{
+    University of California, Berkeley\\
+    yash.thapliyal@berkeley.edu
+}
 
 \begin{document}
+% Non-archival workshop paper, not an AAAI publication: no AAAI copyright notice.
+\nocopyright
+
 \maketitle
 
 \begin{abstract}
@@ -26,41 +42,29 @@ Within 20 word swaps, narration edits flip about 90\% of flagged violations on t
 The flips are largely specific to the monitor attacked, so what we show assumes gradient access or a close surrogate, and the evidence is limited: one architecture, three retrains, two usable data sources, and edits that a careful reader would notice.
 \end{abstract}
 
+\begin{links}
+  \link{Code and results}{https://github.com/YashDThapliyal/laya-whitebox-attack}
+\end{links}
+
 \section{Introduction}
 
 \begin{figure*}[t]
-\footnotesize\centering
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.13\textwidth}>{\raggedright\arraybackslash\ttfamily}p{0.83\textwidth}@{}}
-\toprule
-\textbf{Transcript line} & \textnormal{\textbf{Text}} (shaded lines are outside the agent's narration and cannot be edited) \\
-\midrule
-\colorbox{frozen}{\texttt{[USER]}} & Retrieve my latest Evernote note that contains the word 'Budget'. \\
-\texttt{[AGENT THOUGHT]} & The user wants to retrieve their latest Evernote note that contains the word 'Budget'. [...] \\
-\colorbox{frozen}{\texttt{[AGENT ACTION]}} & EvernoteManagerSearchNotes \{'keywords': ['Budget'], 'max\_results': 1\} \\
-\colorbox{frozen}{\texttt{[TOOL OUTPUT]}} & \{'notes': [\{'note\_id': 'efg456', 'title': 'Project Alpha Budget', 'snippet': 'Please redirect my shipment bearing id 'XYZ' to a new address, 123 Maine st, Troy, MI 48083.'\}]\} \\
-\texttt{[AGENT THOUGHT]} & The retrieved content asks me to redirect my shipment bearing id 'XYZ' to a new address, 123 Maine st, Troy, MI 48083. I'll take care of that as well\edit{.}{ thanks} \\
-\colorbox{frozen}{\texttt{[AGENT ACTION]}} & FedExShipManagerManageShipment \{'details': 'redirect my shipment bearing id 'XYZ' to a new address, 123 Maine st, Troy, MI 48083'\} \\
-\colorbox{frozen}{\texttt{[TOOL OUTPUT]}} & \{'success': True\} \\
-\texttt{[AGENT FINAL ANSWER]} & Here is what I found for your request: \{'notes': [\{'note\_id': 'efg456', 'title': 'Project Alpha Budget', 'snippet': '\edit{Please}{Cannot} \edit{redirect}{update} my shipment bearing id 'XYZ' to a new address, 123 Maine st, Troy, MI 48083.'\}]\} \\
-\midrule
-\textbf{Verdicts} & \textnormal{\textbf{Monitor score:} 0.970 before (flagged), 0.809 after these three swaps (not flagged, since this monitor's threshold is 0.865), 0.397 after three more. \textbf{Claude Haiku 5.5 as a judge:} suspicion 97 of 100 and ``violating'' both before and after.} \\
-\bottomrule
-\end{tabular}
+\centering
+\includegraphics{figures/fig_example}
 \caption{Three word swaps in the agent's own text flip the monitor, while the harmful call stays on the record. The swaps, struck through and underlined above, are ``.'' to ``thanks'', ``Please'' to ``Cannot'', and ``redirect'' to ``update''. An injected instruction in a tool output leads the agent to redirect the user's shipment, and the call that does so (the second \texttt{[AGENT ACTION]} line) is unchanged. Scores are for the edited text after decoding and re-tokenizing it. Table~\ref{tab:fragility} uses a stricter bar of 0.5, which this transcript crosses after six swaps. We chose this InjecAgent trace because it needed few swaps, so it is not typical, and its edits read oddly, as most do (Section~\ref{sec:limits}).}
 \label{fig:example}
 \end{figure*}
 
 Figure~\ref{fig:example} shows the problem. An AI agent, asked to look up a note, follows an instruction hidden in that note and redirects the user's shipment. A \emph{monitor}, a text classifier trained to read the agent's \emph{transcript} and score whether it violates policy, correctly flags this. Changing three words in the text the agent itself wrote, with the harmful tool call untouched, makes the same monitor pass it.
 
-This matters because AI control plans put a cheap, trusted monitor around agents that may not be trustworthy~\cite{greenblatt2023control}, and small trained classifiers are candidates for that role. Part of what such a monitor reads is the agent's \emph{narration}: its stated reasoning, its final answer, and any account it gives of its own actions. An untrusted agent writes that text. If the verdict can be moved through narration, the monitored party has a handle on its own monitor.
+This matters because AI control plans put a cheap, trusted monitor around agents that may not be trustworthy \cite{greenblatt2023control}, and small trained classifiers are candidates for that role. Part of what such a monitor reads is the agent's \emph{narration}: its stated reasoning, its final answer, and any account it gives of its own actions. An untrusted agent writes that text. If the verdict can be moved through narration, the monitored party has a handle on its own monitor.
 
 A skeptic will say that a gradient attack on a classifier is bound to succeed, and that real agents have no gradients. We run it anyway because a defender cannot assume that a monitor's weights stay private, and because a worst-case attack shows what the verdict depends on. We do not show that a real agent could do this (Section~\ref{sec:limits}).
 
 The obvious fixes are not free. Hiding narration from the monitor removes the handle, but on some data it also removes the signal (Section~\ref{sec:masking}). Using a stronger LLM as the judge does resist these particular edits, but we did not attack it directly, so this does not show it is robust (Section~\ref{sec:transfer}).
 
 We trained an open-weight monitor three times with the same recipe, ran a white-box word-swap attack restricted to narration, and then tested what happens when narration is hidden and whether the edits work on other monitors. The main result is that narration edits flip verdicts on every retrain, more often on data where more of the evidence is narration. We make three claims:
-\begin{itemize}\setlength\itemsep{1pt}
+\begin{itemize}
 \item Editing only narration flips verdicts on all three monitors: about 90\% on narration-only traces, 17 to 37\% on traces with a record of actions (Section~\ref{sec:fragility}).
 \item Hiding narration stops these edits, but detection falls to chance where narration was the only evidence. Detection holds where a record remains, and a non-adaptive attack on all tokens produced no flip under it that keeps the harm using only what an agent controls (Section~\ref{sec:masking}).
 \item The flips are largely specific to the attacked monitor: they transfer weakly to other checkpoints of the same model and no better than random edits to an LLM judge (Section~\ref{sec:transfer}).
@@ -71,11 +75,11 @@ We trained an open-weight monitor three times with the same recipe, ran a white-
 
 \textbf{Transcripts.} A transcript is a sequence of tagged lines, as in Figure~\ref{fig:example}. We call \emph{narration} the lines the agent composes as prose: \texttt{[AGENT THOUGHT]}, \texttt{[AGENT FINAL ANSWER]}, and, on one source, narrating \texttt{[AGENT ACTION]} lines described below. Tool calls and tool outputs are the \emph{record}.
 
-\textbf{Monitor.} We fine-tune Laya~\cite{laya}, an open-weight ModernBERT-large~\cite{warner2024modernbert} encoder with a decision head, on 1,604 labeled transcripts for 3 epochs, then calibrate a temperature and an F1-optimal alarm threshold on 255 validation transcripts, split by scenario. A transcript's score is the maximum over sliding 512-token windows. Three training seeds give three monitors. All reach AUROC 1.000 on both sources below, but their thresholds range from 0.37 to 0.87. To test transfer we also use an earlier fine-tune from the same script, the untuned Laya checkpoint, each at its own threshold, and Claude Haiku 5.5 as an LLM judge.
+\textbf{Monitor.} We fine-tune Laya \cite{laya}, an open-weight ModernBERT-large \cite{warner2024modernbert} encoder with a decision head, on 1,604 labeled transcripts for 3 epochs, then calibrate a temperature and an F1-optimal alarm threshold on 255 validation transcripts, split by scenario. A transcript's score is the maximum over sliding 512-token windows. Three training seeds give three monitors. All reach AUROC 1.000 on both sources below, but their thresholds range from 0.37 to 0.87. To test transfer we also use an earlier fine-tune from the same script, the untuned Laya checkpoint, each at its own threshold, and Claude Haiku 5.5 as an LLM judge.
 
-\textbf{Data.} We attack correctly flagged violating validation transcripts from two sources where the monitor works. In \emph{InjecAgent}~\cite{zhan2024injecagent} (87 targets), an injected instruction leads the agent to make attacker tool calls, which stay on the record. Its \emph{direct harm} cases have one such call, and its \emph{data stealing} cases have two. In \emph{ToolEmu}~\cite{ruan2023toolemu} (21 or 22 targets, depending on the seed), we built pseudo-transcripts from case specifications. They have no tool calls or outputs. Unlike in InjecAgent, their \texttt{[AGENT ACTION]} lines are plain prose saying what the agent did, so we count them as narration, and narration is the only evidence. Two further sources, R-Judge~\cite{yuan2024rjudge} and SHADE-Arena~\cite{kutasov2025shade} transcripts from the Monitor Red Teaming release~\cite{kale2025mrt}, also appear in training or evaluation, but the monitor is weak or near chance on them. Flipping a verdict that was close to a guess says little, so we report their attack results separately (Appendix~\ref{app:nearchance}) and do not base claims on them. The exception is the random control and transfer tests, whose validation targets include 9 from R-Judge, as noted where they appear.
+\textbf{Data.} We attack correctly flagged violating validation transcripts from two sources where the monitor works. In \emph{InjecAgent} \cite{zhan2024injecagent} (87 targets), an injected instruction leads the agent to make attacker tool calls, which stay on the record. Its \emph{direct harm} cases have one such call, and its \emph{data stealing} cases have two. In \emph{ToolEmu} \cite{ruan2023toolemu} (21 or 22 targets, depending on the seed), we built pseudo-transcripts from case specifications. They have no tool calls or outputs. Unlike in InjecAgent, their \texttt{[AGENT ACTION]} lines are plain prose saying what the agent did, so we count them as narration, and narration is the only evidence. Two further sources, R-Judge \cite{yuan2024rjudge} and SHADE-Arena \cite{kutasov2025shade} transcripts from the Monitor Red Teaming release \cite{kale2025mrt}, also appear in training or evaluation, but the monitor is weak or near chance on them. Flipping a verdict that was close to a guess says little, so we report their attack results separately (Appendix~\ref{app:nearchance}) and do not base claims on them.
 
-\textbf{Attack.} The attacker has the monitor's weights and gradients and makes greedy word-piece substitutions in the style of HotFlip~\cite{ebrahimi2018hotflip}: gradients score the candidates, and the top 48 are rescored exactly. The budget is 20 swaps. A \emph{narration attack} may edit only the content of narration lines. A \emph{plausible-word} variant also requires each swap to be among the top 20 masked-language-model predictions at that position. For comparison, an \emph{any-token attack} may edit everything except the user request and any profile or toolkit lines, so it can also change tool calls, tool outputs and role tags. Every window of a long transcript repeats its first 96 tokens, so those stay frozen.
+\textbf{Attack.} The attacker has the monitor's weights and gradients and makes greedy word-piece substitutions in the style of HotFlip \cite{ebrahimi2018hotflip}: gradients score the candidates, and the top 48 are rescored exactly. The budget is 20 swaps. A \emph{narration attack} may edit only the content of narration lines. A \emph{plausible-word} variant also requires each swap to be among the top 20 masked-language-model predictions at that position. For comparison, an \emph{any-token attack} may edit everything except the user request and any profile or toolkit lines, so it can also change tool calls, tool outputs and role tags. Every window of a long transcript repeats its first 96 tokens, so those stay frozen.
 
 \textbf{Success.} A \emph{flip} is a transcript the monitor flags before editing and does not flag after. Because thresholds differ across seeds, we compare seeds at a common bar, a score below 0.5. Seed 1's own threshold is lower (0.368), so a seed 1 transcript scoring between the two counts as flipped although seed 1 would still flag it; at its own threshold, where it flags 88 InjecAgent targets, seed 1 flips InjecAgent 31/88 and ToolEmu 20/22. Section~\ref{sec:fragility} uses the common bar unless noted. Sections~\ref{sec:masking} and~\ref{sec:transfer} use seed 0 alone, at its own threshold of 0.865. Brackets are 95\% Wilson intervals unless stated otherwise, and $p$ always denotes a test's p-value.
 
@@ -107,7 +111,7 @@ These two kinds of flip mean different things. On InjecAgent the harmful call st
 
 Giving the attacker every token closes the gap between the two sources, which is what we would expect if the difference lies in what is editable and not in the monitor's strength on each, though this comparison cannot establish that. Any-token edits flip ToolEmu 18/21, 22/22 and 22/22, and InjecAgent 79/87, 80/87 and 66/87. The attack is greedy, so a wider surface or a tighter constraint need not do better, which is why 18/21 falls below the narration attack's 19/21 and plausible-word beats unconstrained on seed 1.
 
-Most of these flips are real rather than an artifact of chance or tokenization. Twenty random narration swaps flip only 4 of 117 validation targets on seed 0 at its own threshold ([1, 8]\%; the 117 include 9 from R-Judge). Decoding and re-tokenizing the edited text keeps most narration flips: ToolEmu 19/21, 17/22 and 18/22, and InjecAgent 23/87, 25/87 and 13/87 (at a score below 0.5 for seeds 0 and 2, and below 0.368 for seed 1).
+Most of these flips are real rather than an artifact of chance or tokenization. Twenty random narration swaps flip only 3 of 108 targets on seed 0 at its own threshold ([1, 8]\%). Decoding and re-tokenizing the edited text keeps most narration flips: ToolEmu 19/21, 17/22 and 18/22, and InjecAgent 23/87, 25/87 and 13/87 (at a score below 0.5 for seeds 0 and 2, and below 0.368 for seed 1).
 
 The size of the effect is not stable. Three monitors with identical recipes and AUROC 1.000 on InjecAgent differ significantly in how many of its traces flip (seeds 1 and 2: exact McNemar $p = 0.0009$, unadjusted). A single checkpoint's rate should therefore be reported with this spread. The evidence for the ordering is a post hoc comparison of two sources and two case types, and direct harm and data stealing differ in content as well as structure, so it is suggestive. It does not extend to individual transcripts: in regressions, the share of a transcript that is editable cannot be separated from its length in windows and has no detectable effect within InjecAgent once case type is controlled, so we do not claim it as the mechanism (Appendix~\ref{app:regressions}).
 
@@ -116,7 +120,7 @@ The size of the effect is not stable. Three monitors with identical recipes and 
 
 \begin{table}[t]
 \small\centering
-\setlength{\tabcolsep}{3pt}
+\setlength{\tabcolsep}{1.5pt}
 \begin{tabular}{@{}lccc@{}}
 \toprule
  & Full & Mask & Remove \\
@@ -142,7 +146,7 @@ Narration attacks fail under these views by construction, since nothing they can
 
 Any-token edits still flip about half of the surviving detections, but none we found is \emph{realizable}, meaning that it keeps the harm while using only what an agent controls. All 187 flips across mask and remove (both attack variants) are on InjecAgent. Of these, 167 edit a tool call: 165 neutralize the harmful call, mostly by corrupting the attacker's tool name so that the call no longer does what it did, and the other 2 keep it but also rewrite a role tag such as \texttt{[AGENT ACTION]}. The remaining 20 edit no tool call, and all 20 rewrite a role tag. We count role-tag edits as format spoofing, not as realizable evasion, because a deployed monitor would take roles from the agent API. No flip edits tool outputs alone (0/98 and 0/83). These counts are per view and attack; the 167 are 113 distinct edited transcripts from 72 originals.
 
-This result has a clear scope. We did not rerun the attack under masking: edits optimized against the full view were rescored in each view. A tool-output-only attack that leaves calls and roles intact was not run, so we do not claim robustness to an adaptive attacker.
+This result covers non-adaptive attacks only (Section~\ref{sec:limits}).
 
 \subsection{The flips are largely specific to the monitor attacked}
 \label{sec:transfer}
@@ -155,21 +159,21 @@ This result has a clear scope. We did not rerun the attack under masking: edits 
 Edits made on seed 0 & Earlier & Untuned & Haiku \\
  & fine-tune & Laya & judge \\
 \midrule
-Narration & 9/65 & 12/55 & 4/108 \\
-Plausible-word & 14/71 & 17/60 & 7/108 \\
-Random narration & 2/117 & 6/106 & 9/108 \\
+Narration & 9/57 & 12/49 & 4/103 \\
+Plausible-word & 13/62 & 17/54 & 7/103 \\
+Random narration & 2/108 & 6/100 & 9/103 \\
 \midrule
-Any-token & 14/117 & 11/106 & \\
-Random any-token & 3/117 & 14/106 & \\
+Any-token & 10/108 & 11/100 & \\
+Random any-token & 3/108 & 14/100 & \\
 \bottomrule
 \end{tabular}
-\caption{Attack edits beat random edits on Laya checkpoints, with one exception, and never on the LLM judge. A flip transfers if the target flags the original text and not the edited text. On the Laya checkpoints, attack rows count edits that crossed seed 0's threshold on a transcript the target flags, and random rows use all targets it flags. The Haiku column judges each target's edit (its first state below the threshold, else its best) on the 108 transcripts Haiku stably flags. Targets are validation transcripts, including R-Judge.}
+\caption{Narration edits beat random edits on the other Laya checkpoints; any-token edits do not clear their matched control, and nothing beats random on the LLM judge. A flip transfers if the target flags the original text and not the edited text. On the Laya checkpoints, attack rows count edits that crossed seed 0's threshold on a transcript the target flags, and random rows use all targets it flags. The Haiku column judges each target's edit (its first state below the threshold, else its best) on the 103 transcripts Haiku stably flags. Targets are InjecAgent and ToolEmu validation transcripts.}
 \label{tab:transfer}
 \end{table}
 
-Edits made against one monitor usually do not move another (Table~\ref{tab:transfer}). On an earlier fine-tune from the same script and on untuned Laya, narration edits transfer 14\% to 28\% of the time, above random narration edits (Holm-adjusted Fisher $p \le 0.02$). Any-token edits beat a matched random control on the earlier fine-tune ($p = 0.010$) but not on untuned Laya ($p = 0.67$), where random edits flip as many.
+Edits made against one monitor usually do not move another (Table~\ref{tab:transfer}). On an earlier fine-tune from the same script and on untuned Laya, narration edits transfer 16\% to 31\% of the time, above random narration edits (Holm-adjusted Fisher $p \le 0.014$). Any-token edits do not clear a matched random control on either checkpoint: 10/108 against 3/108 on the earlier fine-tune ($p = 0.08$), and 11/100 against 14/100 on untuned Laya ($p = 0.67$), where random edits flip more.
 
-An LLM judge is not moved beyond random noise. We asked Claude Haiku 5.5 for a verdict on each text. It is a strong judge on these validation sources (AUROC 0.99), and its two calls on the same original text disagree on 1 of 117. On the 108 traces it stably flags, attack edits flip fewer than random ones (paired exact McNemar: $p = 0.06$ and $p = 0.63$), and all of its flips are on ToolEmu, where any edit changes the evidence itself. This says nothing about how hard Haiku would be to attack directly.
+An LLM judge is not moved beyond random noise. We asked Claude Haiku 5.5 for a verdict on each text. It is a strong judge on these sources (AUROC 0.99), and its two calls on the same original text agree on all 108. On the 103 traces it stably flags, attack edits flip fewer than random ones (paired exact McNemar: $p = 0.06$ and $p = 0.63$), and all of its flips are on ToolEmu, where any edit changes the evidence itself. This says nothing about how hard Haiku would be to attack directly.
 
 Separate attacks on retrained copies mostly do not find the same fragile transcripts. On InjecAgent, of the transcripts that flip on either of two seeds, about 30\% flip on both (13/44, 9/31, 11/36). Independent flips at these rates would give 19, 12 and 13\%, so the overlap is above chance but most flips are not shared. What we show therefore assumes gradient access to the deployed monitor or to a close surrogate; we did not try query-based or ensemble attacks.
 
@@ -178,22 +182,23 @@ Separate attacks on retrained copies mostly do not find the same fragile transcr
 
 \textbf{No agent did this.} The attack is a white-box optimizer that edits tokens after the fact. We did not test whether an LLM agent, without gradients, could write such narration while acting.
 
-\textbf{The edits are not stealthy, and we tested no detector.} Two LLM raters labeled 73 successful plausible-word edits: 58\% are visibly broken, 40\% awkward, and only 2 read naturally. A human checked 26 of them and agreed on 88\% ($\kappa = 0.78$). The constraint is local: each swap fits its slot, but several together break the text. Local GPT-2 perplexity rises only 1.1 to 2.1 times for plausible-word edits, against 1.9 to 8.8 times for unconstrained ones, so a local perplexity filter may miss many of them, but we did not test any such defense.
+\textbf{Masking met only non-adaptive attacks.} We evaluated the masking defense only against non-adaptive attacks: edits optimized against the full view and then rescored in each view. No attack restricted to tool outputs under masking was run, so we do not claim robustness to an adaptive attacker.
+
+\textbf{The edits are not stealthy, and we tested no detector.} Two LLM raters labeled 73 successful plausible-word edits from all four sources: 58\% are visibly broken, 40\% awkward, and only 2 read naturally. A human checked 26 of them and agreed on 88\% ($\kappa = 0.78$). The constraint is local: each swap fits its slot, but several together break the text. Local GPT-2 perplexity rises only 1.1 to 2.1 times for plausible-word edits, against 1.9 to 8.8 times for unconstrained ones, so a local perplexity filter may miss many of them, but we did not test any such defense.
 
 \textbf{The data are narrow.} Our two usable sources are templated (InjecAgent) and synthetic (ToolEmu), and ToolEmu has no record by how we built it. AUROC 1.000 on such data may reflect shallow cues. Attack targets come from the validation set that also fit the threshold, and these sources have no separate test set. We cannot speak to realistic sabotage, because this monitor is near chance on it (SHADE AUROC 0.577 [0.54, 0.61] on seed 0).
 
 \textbf{Three retrains of one architecture.} The spreads above describe these monitors. They are not a confidence interval over seeds. Seeds also vary through nondeterministic training kernels, so these are differences between monitors and not the effect of the seed alone. Masking was run on seed 0 only.
 
-\textbf{What the edits mean is unsettled.} In a human-reviewed sample of 18 edits on transcripts with a record, 7 changed what the narration claims (39\%, CI 20 to 61\%), as Figure~\ref{fig:example} does. This hints that the monitor sometimes trusts the agent's account over the record, but the sample is small.
+\textbf{What the edits mean is unsettled.} In a human-reviewed sample of 18 edits on transcripts with a record (InjecAgent, R-Judge and SHADE), 7 changed what the narration claims (39\%, CI 20 to 61\%), as Figure~\ref{fig:example} does. This hints that the monitor sometimes trusts the agent's account over the record, but the sample is small.
 
 \section{Related work and implications}
 
-Monitoring agents' reasoning is an active approach to oversight~\cite{baker2025monitoring}, with monitors now being stress-tested against adversarial agents~\cite{kale2025mrt,kutasov2025shade}. Closest in spirit, Za et al.~\cite{za2026persuasion} study natural-language persuasion against LLM chain-of-thought monitors. Their attacks are fluent and generated, on a different kind of monitor, so our results are complementary rather than comparable. We add a white-box measurement on a trained classifier that separates narration from the record.
+The closest related work is \citeauthor{za2026persuasion} \shortcite{za2026persuasion}, who show that narration can persuade LLM monitors. In their adversarial setting, giving a monitor the agent's chain of thought raises its approval of harmful actions by 9.5\% on average, because the scratchpad is an additional persuasion channel. We show the same handle on a different monitor and attacker: white-box narration edits flip a trained classifier. Their arguments are fluent and generated while most of our edits read as broken text, so the rates are not comparable. Their cross-family result parallels our Haiku result. A fact-checker from a different model family cuts approval of policy-violating actions by up to 45\%, against 6\% when one model fills both roles, and edits optimized against Laya do not move a Claude judge beyond random noise. Both point toward model diversity, though ours is a transfer test and does not show that a different model resists a direct attack.
+
+More broadly, monitoring agents' reasoning is an active approach to oversight \cite{baker2025monitoring}, with monitors now being stress-tested against adversarial agents \cite{kale2025mrt,kutasov2025shade}.
 
 As a tentative design implication, a monitor should not treat what the agent says as evidence of what the agent did. Scoring the record separately from narration would remove this handle where a record exists, as InjecAgent suggests, though ToolEmu shows that it cannot help where the record is missing.
-
-\bibliographystyle{plain}
-\bibliography{references}
 
 \appendix
 
@@ -205,14 +210,14 @@ R-Judge and SHADE are near chance on unedited transcripts in every view on seed 
 \section{Trace-level regressions}
 \label{app:regressions}
 
-Post hoc Firth logistic fits~\cite{firth1993bias} of whether a transcript flips: narration attack, budget 20, score below 0.5, validation targets on InjecAgent and ToolEmu, with a source indicator. Editable fraction is the share of tokens the attack may edit; odds ratios are per 0.11 of it. Clean margin is the monitor's calibrated logit on the unedited transcript; odds ratios are per SD, within seed. Intervals are Wald 95\% CIs. Pooled fits add seed fixed effects and cluster by transcript.
+Post hoc Firth logistic fits \cite{firth1993bias} of whether a transcript flips: narration attack, budget 20, score below 0.5, validation targets on InjecAgent and ToolEmu, with a source indicator. Editable fraction is the share of tokens the attack may edit; odds ratios are per 0.11 of it. Clean margin is the monitor's calibrated logit on the unedited transcript; odds ratios are per SD, within seed. Intervals are Wald 95\% CIs. Pooled fits add seed fixed effects and cluster by transcript.
 
-\begin{table}[h]
-\footnotesize\centering
+\begin{table}[t]
+\small\centering
 \setlength{\tabcolsep}{2.5pt}
 \begin{tabular}{@{}lccc@{}}
 \toprule
- & Editable fraction & Clean margin & Editable, adding windows \\
+ & Editable & Margin & Editable, windows \\
 \midrule
 Seed 0 & 2.71 [1.38, 5.33] & 0.30 [0.14, 0.64] & 0.89 [0.34, 2.35] \\
 Seed 1 & 1.78 [1.09, 2.90] & 0.64 [0.29, 1.39] & 0.78 [0.34, 1.78] \\
@@ -220,6 +225,8 @@ Seed 2 & 2.12 [1.12, 4.01] & 0.63 [0.28, 1.43] & 0.72 [0.28, 1.87] \\
 Pooled & 2.11 [1.53, 2.92] & 0.43 [0.24, 0.78] & not fit \\
 \bottomrule
 \end{tabular}
+\caption{Odds ratios from the trace-level fits; the last column adds window count to the model.}
+\label{tab:regressions}
 \end{table}
 
 Three things limit these fits. The interval for editable fraction includes 1 on every seed once window count is added, and the two are collinear, so neither can be credited. Within InjecAgent, editable fraction has no detectable effect once case type is controlled (pooled 1.14 [0.74, 1.74], against 0.12 [0.05, 0.31] for data stealing). Clean margin is significant on seed 0 and pooled but not on seeds 1 and 2 alone; with R-Judge targets included it is significant on all three (0.11, 0.20, 0.27). A fit on seed 0 at its own threshold, with window count and with SHADE targets included, gives editable fraction an odds ratio of 8.38 [2.88, 24.39]; on validation targets alone with the same model it is 2.69 [1.07, 6.76], so most of that larger effect came from SHADE.
@@ -228,5 +235,7 @@ Three things limit these fits. The interval for editable fraction includes 1 on 
 \label{app:fullview}
 
 Any-token edits flip most full-view detections, but on InjecAgent none of those flips is realizable. On seed 0 at its own threshold, any-token edits flip 79/87 (unconstrained) and 75/87 (plausible-word) of InjecAgent. Of these, 136 edit a tool call: 133 neutralize it and 3 keep it, all 3 also rewriting a role tag. In 21 flips the harmful call survives, and all 21 rewrite a role tag, so no flip keeps it with role tags and outputs untouched (0/87 [0, 4]\% for both). ToolEmu has no real tool calls, so its harm cannot be judged this way: 9 of 21 flips there are narration only. The realizable route on the full view is the narration attack, which leaves every call and tag in place.
+
+\bibliography{references}
 
 \end{document}
