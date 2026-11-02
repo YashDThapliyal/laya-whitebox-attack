@@ -18,6 +18,9 @@ import sys
 import time
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cli_util import run_cli
+
 HERE = Path(__file__).resolve().parent
 WORK = Path(os.environ["COLAB_WORK"])
 C7 = str(HERE / "colab7")
@@ -33,11 +36,7 @@ def ts() -> str:
 
 
 def run(cmd: list[str], timeout: int) -> tuple[int, str]:
-    try:
-        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, check=False)
-        return p.returncode, p.stdout + p.stderr
-    except subprocess.TimeoutExpired:
-        return 124, "timeout"
+    return run_cli(cmd, timeout)
 
 
 def last_ping_age(endpoint: str) -> float | None:
@@ -91,7 +90,7 @@ class Heartbeat:
     def beat(self) -> bool:
         """One heartbeat; returns False once the session is gone."""
         t0 = time.time()
-        rc, out = run([C7, "exec", "-s", self.name, "-f", str(self.code)], 150)
+        rc, out = run([C7, "exec", "-s", self.name, "-f", str(self.code)], 90)
         ok = "HB_OK" in out
         if not ok and (GONE_RE.search(out) or self.gone()):
             self.log("session gone, heartbeat exiting")

@@ -1,0 +1,11 @@
+15:52:53 heartbeat start name=layahb1 endpoint=gpu-a100-s-ft-ass1c0-2blp917eukqoh interval=240s pid=51594
+15:52:53 KEEPALIVE started pid=51601 (initial)
+15:55:24 HB FAILED rc=124 'timeout' (kernel busy or transient; VM still up) 150.7s | keepalive pid=51601 last_ping=28s ago
+15:59:24 KEEPALIVE started pid=58977 (daemon not running, exit=-15)
+15:59:24 HB FAILED rc=124 'timeout' (kernel busy or transient; VM still up) 150.8s | keepalive pid=58977 last_ping=88s ago
+16:03:24 HB FAILED rc=124 'timeout' (kernel busy or transient; VM still up) 150.9s | keepalive pid=58977 last_ping=59s ago
+16:05:05 HB ok 11.3s | keepalive pid=58977 last_ping=40s ago
+16:08:57 HB ok 3.5s | keepalive pid=58977 last_ping=31s ago
+16:12:56 HB ok 3.0s | keepalive pid=58977 last_ping=30s ago
+16:16:59 session gone, heartbeat exiting
+16:16:59 heartbeat end

@@ -1,0 +1,11 @@
+16:18:27 heartbeat start name=layahb2 endpoint=gpu-a100-s-ft-usc1f0-2fpook793fea4 interval=240s pid=99341
+16:18:27 KEEPALIVE started pid=99343 (initial)
+16:18:29 HB ok 2.6s | keepalive pid=99343 last_ping=1s ago
+16:22:30 HB ok 3.3s | keepalive pid=99343 last_ping=2s ago
+16:26:29 KEEPALIVE started pid=6426 (daemon not running, exit=-15)
+16:26:29 HB ok 2.8s | keepalive pid=6426 last_ping=181s ago
+16:30:31 HB ok 4.0s | keepalive pid=6426 last_ping=59s ago
+16:34:29 HB ok 2.5s | keepalive pid=6426 last_ping=56s ago
+16:38:28 HB ok 1.8s | keepalive pid=6426 last_ping=55s ago
+16:42:27 session gone, heartbeat exiting
+16:42:27 heartbeat end

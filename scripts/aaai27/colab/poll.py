@@ -22,13 +22,13 @@ import argparse
 import json
 import os
 import re
-import subprocess
 import sys
 import time
 from pathlib import Path
 
 S = Path(__file__).resolve().parent
 sys.path.insert(0, str(S))
+from cli_util import run_cli
 from task_usage import task_units
 
 BALANCE_FLOOR = 15.0
@@ -37,11 +37,7 @@ GONE_RE = re.compile(r"session '[^']*' not found|no active sessions", re.IGNOREC
 
 
 def run(cmd: list[str], timeout: int) -> tuple[int, str]:
-    try:
-        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, check=False)
-        return p.returncode, (p.stdout + p.stderr)
-    except subprocess.TimeoutExpired:
-        return 124, "timeout"
+    return run_cli(cmd, timeout)
 
 
 def complete_lines(path: Path) -> list[str]:

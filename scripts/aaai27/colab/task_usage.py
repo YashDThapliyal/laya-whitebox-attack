@@ -20,13 +20,16 @@ A100_RATE = 6.73  # units per hour for one A100, as reported by `colab usage` wi
 
 def vm_minutes(path: Path, now: dt.datetime) -> tuple[float, bool]:
     events = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
-    created = [e for e in events if e["event_type"] == "session_created"]
-    ended = [e for e in events if e["event_type"] == "session_terminated"]
-    if not created:
-        return 0.0, False
-    start = dt.datetime.fromisoformat(created[0]["timestamp"])
-    end = dt.datetime.fromisoformat(ended[-1]["timestamp"]) if ended else now
-    return max(0.0, (end - start).total_seconds() / 60), not ended
+    total, start = 0.0, None  # a name can be reused (newvm.sh releases non-US VMs), so sum each up-interval
+    for e in events:
+        if e["event_type"] == "session_created" and start is None:
+            start = dt.datetime.fromisoformat(e["timestamp"])
+        elif e["event_type"] == "session_terminated" and start is not None:
+            total += (dt.datetime.fromisoformat(e["timestamp"]) - start).total_seconds() / 60
+            start = None
+    if start is not None:
+        total += (now - start).total_seconds() / 60
+    return total, start is not None
 
 
 def task_vms() -> list[tuple[str, float, bool]]:

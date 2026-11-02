@@ -1,0 +1,14 @@
+15:52:47 creating layahb1
+NEWVM_OK layahb1 endpoint=gpu-a100-s-ft-ass1c0-2blp917eukqoh heartbeat_pid=51594
+15:58:53 killing keep-alive pid=51601 to test the restart
+16:13:48 after 21 min: [layahb1] gpu-a100-s-ft-ass1c0-2blp917eukqoh | Hardware: A100 | Shape: Standard | Variant: GPU | Status: IDLE
+  Last Execution: /private/tmp/claude-501/-Users-yash-Documents-laya-grad-break/bccc3f37-6b53-4a6a-ae6d-7204b38028bd/scratchpad/hb_layahb1.py at 2026-11-01 16:12:56
+beats_ok=3 max_gap_s=240 keepalive_starts=2 terminated_events=0
+[colab] Session terminated.
+heartbeat exited after stop: yes
+16:12:56 HB ok 3.0s | keepalive pid=58977 last_ping=30s ago
+16:16:59 session gone, heartbeat exiting
+16:16:59 heartbeat end
+HEARTBEAT_TEST PASS
+
+[exited with code 0]

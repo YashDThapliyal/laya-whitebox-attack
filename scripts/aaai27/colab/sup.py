@@ -33,6 +33,9 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 S = Path(os.environ["COLAB_WORK"])  # working dir: session file, staging, chunks, step scripts
 C7 = str(HERE / "colab7")
+sys.path.insert(0, str(HERE))
+from cli_util import run_cli
+
 CHUNK = "50m"
 MAX_RECLAIMS = 8  # per supervisor run; beyond this something is wrong, stop and report
 MAX_FAILS = 2
@@ -66,11 +69,7 @@ class Sup:
 
     # ---------- remote primitives
     def cli(self, *args: str, timeout: int = 300) -> tuple[int, str]:
-        try:
-            p = subprocess.run([C7, *args], capture_output=True, text=True, timeout=timeout, check=False)
-            return p.returncode, p.stdout + p.stderr
-        except subprocess.TimeoutExpired:
-            return 124, "timeout"
+        return run_cli([C7, *args], timeout)
 
     def rsh(self, cmd: str, timeout: int = 600, tries: int = 4) -> str:
         """Run a short shell command on the VM through the kernel; returns its output, raises on failure."""
