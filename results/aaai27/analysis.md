@@ -27,7 +27,7 @@ What the evidence supports as of this commit. Where the prose of a later section
 - **Counting unit:** cells, not traces. One attack state can flip under both views, so the 167 are 113 distinct attack states (111 neutralized) on 72 traces.
 - **Scope:** the attack was optimized against the full view and not adapted to masking. An attack restricted to tool-output text with intact calls and roles was not run, so masking's robustness to an adaptive attack is untested. This claim says no realizable flip was found, not that none exists.
 
-**4. Flips transfer weakly, and which traces flip is largely seed-specific on InjecAgent.** Sections 6, 7 and 8; first state below p = 0.865 on run 2 unless noted.
+**4. Flips transfer weakly, and which traces flip is largely seed-specific on InjecAgent.** Sections 6, 7 and 8; first state below p = 0.865 on run 2 unless noted. Transfer and Haiku denominators are all val targets, so they include R-Judge (9 of 117; 5 of Haiku's 108, none of which flip).
 
 - **Run 1:** above the matched random control. Any token, unconstrained, 14 / 117 [7, 19]% against 3 / 117 [1, 7]% (Fisher p = 0.010). Agent text 14 to 20% against 2% (Holm p of at most 0.005).
 - **Zero-shot Laya:** agent text transfers above its control (22 and 28% against 6%; Holm p of at most 0.020). Any token does not: 11 / 106 [6, 18]% against the matched control's 14 / 106 [8, 21]% (p = 0.67). The matched any-token control exists only for this state and attack; the deeper p < 0.5 any-token states beat only the narrower agent-text control.
