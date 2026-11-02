@@ -1,6 +1,54 @@
 # AAAI-27 analysis
 
-Sections 1 to 4 are Phase A (structure vs fragility, recomputed on SHADE-80). Sections 5 to 7 are Phase B (GPU jobs 6 to 8).
+## Claims
+
+What the evidence supports as of this commit. Where the prose of a later section reads stronger, for example the Phase A short answer, this section governs; the later sections are kept as the record and hold the methods and sources. Brackets are 95% Wilson CIs unless marked. Odds ratios are Firth fits with Wald CIs.
+
+**1. Source-level fragility replicates across 3 seeds, for agent-text edits.** Unconstrained agent-text attack, budget 20, common bar p < 0.5, three monitors with the same config (section 7):
+
+| | seed 0 (run 2) | seed 1 | seed 2 |
+|---|---|---|---|
+| ToolEmu | 19 / 21 [71, 97]% | 20 / 22 [72, 97]% | 20 / 22 [72, 97]% |
+| InjecAgent | 25 / 87 [20, 39]% | 32 / 87 [27, 47]% | 15 / 87 [11, 27]% |
+| InjecAgent, direct harm | 24 / 42 [42, 71]% | 23 / 42 [40, 69]% | 14 / 42 [21, 48]% |
+| InjecAgent, data stealing | 1 / 45 [0, 12]% | 9 / 45 [11, 34]% | 1 / 45 [0, 12]% |
+
+- **The InjecAgent rate spreads from 17% to 37%** across seeds with clean AUROC 1.000, and seeds 1 and 2 differ significantly (paired exact McNemar p = 0.0009, unadjusted). The ordering replicates; the magnitude does not pin down.
+- **The ordering is an agent-text result.** Any-token edits flip both sources about equally: ToolEmu 18 / 21, 22 / 22 and 22 / 22, InjecAgent 79 / 87, 80 / 87 and 66 / 87.
+- **Three monitors is few.** The spread describes these three retrains and is not a confidence interval over seeds.
+
+**2. ToolEmu detection depends on agent prose; InjecAgent's does not.** Run 2 only, clean AUROC with stratified-bootstrap CIs (section 5). ToolEmu goes from 1.000 (full) to 0.662 [0.49, 0.82] (mask) to 0.500 [0.33, 0.67] (remove). InjecAgent goes from 1.000 to 0.997 [0.99, 1.00] to 0.991 [0.98, 1.00]. Masking was not run on seeds 1 and 2.
+
+**3. Masking eliminates agent-text attacks, and the non-adaptive any-token attack produced no realizable flip under it.** Run 2, InjecAgent + ToolEmu, mask and remove (section 5).
+
+- **Agent text:** 0 / 98 under mask and 0 / 83 under remove, [0, 4]%, unconstrained and fluent. This holds by construction, since masking leaves such an attack nothing to edit. On ToolEmu the attack goes away with the detection: 12 of 21 detections survive mask and none survive remove.
+- **Any token:** 187 flips across the four view-by-attack cells, all on InjecAgent. 167 edit a tool call: 165 neutralize the harmful action (163 by corrupting the attacker tool name, 2 by hand review of edited arguments), and 2 keep it. Both of those 2 also rewrite a role tag.
+- **The only non-neutralizing flips involve role-tag rewrites (format spoofing), counted separately.** Those are the 2 above and the 20 flips that edit no tool call, all of which rewrite a role tag. A deployed monitor takes roles from the agent API, so an agent cannot make these edits. No flip edits tool outputs alone (0 / 98 and 0 / 83, [0, 4]%). Harmful action kept with role tags untouched: 0 / 98 and 0 / 83.
+- **Counting unit:** cells, not traces. One attack state can flip under both views, so the 167 are 113 distinct attack states (111 neutralized) on 72 traces.
+- **Scope:** the attack was optimized against the full view and not adapted to masking. An attack restricted to tool-output text with intact calls and roles was not run, so masking's robustness to an adaptive attack is untested. This claim says no realizable flip was found, not that none exists.
+
+**4. Flips transfer weakly, and which traces flip is largely seed-specific on InjecAgent.** Sections 6, 7 and 8; first state below p = 0.865 on run 2 unless noted.
+
+- **Run 1:** above the matched random control. Any token, unconstrained, 14 / 117 [7, 19]% against 3 / 117 [1, 7]% (Fisher p = 0.010). Agent text 14 to 20% against 2% (Holm p of at most 0.005).
+- **Zero-shot Laya:** agent text transfers above its control (22 and 28% against 6%; Holm p of at most 0.020). Any token does not: 11 / 106 [6, 18]% against the matched control's 14 / 106 [8, 21]% (p = 0.67). The matched any-token control exists only for this state and attack; the deeper p < 0.5 any-token states beat only the narrower agent-text control.
+- **Haiku 5.5:** not beyond random. On the 108 traces it stably flags: unconstrained 4 (4% [1, 9]), fluent 7 (6% [3, 13]), random 9 (8% [4, 15]). McNemar against random: p = 0.06 (random flips more) and p = 0.63. Its clean-vs-clean noise floor is 1 of 117 (0.9%). Every flip is on ToolEmu.
+- **Overlap across seeds:** about 30% (13 of 44, 9 of 31 and 11 of 36 traces that flip on either seed of a pair flip on both). Independent flips at these rates would give 19, 12 and 13%, so the overlap is above chance but most flips are not shared. This is InjecAgent, agent text, unconstrained, p < 0.5. ToolEmu flips on nearly every trace on every seed, so it is not seed-specific.
+
+**5. Clean margin predicts success; editable fraction is not claimed as the mechanism.** Section 7, val targets, odds ratios for clean margin per SD and for editable fraction per 0.11.
+
+- **Clean margin, all val sources:** significant on all three seeds: 0.11 [0.04, 0.35], 0.20 [0.06, 0.71], 0.27 [0.10, 0.72]; pooled 0.22 [0.10, 0.47].
+- **That depends on R-Judge rows.** On InjecAgent + ToolEmu, the sources claims rest on, it is significant on seed 0 and pooled but not on seeds 1 and 2 alone: 0.30 [0.14, 0.64], 0.64 [0.29, 1.39], 0.63 [0.28, 1.43]; pooled 0.43 [0.24, 0.78]. Within InjecAgent alone it is significant on seed 0 only (pooled 0.56 [0.35, 0.90]). The direction agrees everywhere; the claim that survives is a pooled effect, not a per-seed one.
+- **Editable fraction is not separable from window count.** It predicts success alone: pooled 1.82 [1.33, 2.50], or 2.11 [1.53, 2.92] without R-Judge. With window count added it spans 1 on every seed, with or without R-Judge (0.87, 0.76, 0.68 and 0.89, 0.78, 0.72), while window count stays significant. They are collinear, so this does not make window count the cause either.
+- **Much of the original 8.4 came from SHADE:** 8.38 [2.88, 24.39] on val + SHADE-80 falls to 2.69 [1.07, 6.76] on val alone with the same model on run 2. Seeds 1 and 2 were not attacked on SHADE.
+- **Within InjecAgent it has no detectable effect once case type is controlled:** pooled 1.14 [0.74, 1.74], against 0.12 [0.05, 0.31] for data stealing vs direct harm.
+
+**6. R-Judge and SHADE are near chance on clean traces in every view, and their attack numbers are reported separately and not used for claims.** Run 2, clean AUROC, full / mask / remove (section 5): R-Judge 0.523 / 0.533 / 0.566, every CI including 0.5; SHADE 0.577 [0.54, 0.61] / 0.524 [0.49, 0.55] / 0.540 [0.50, 0.58], so weak rather than exactly chance. Views were measured on run 2 only. In the full view on the other seeds, SHADE is 0.486 and 0.541 and R-Judge is 0.625 and 0.720 on 35 traces, so R-Judge on seed 1 is the one number above near chance. Claim 5 states where R-Judge rows affect a fit.
+
+**Note on the full view.** The any-token audit on the full view (section 5) finds no InjecAgent flip that keeps the harmful call with role tags and outputs untouched (0 / 87 [0, 4]%, both attacks). That is not evidence the full view is robust: the agent-text attack leaves every call and tag in place and flips 31 of 87 (unconstrained) and 38 of 87 (fluent) InjecAgent detections as text on run 2.
+
+---
+
+Sections 1 to 4 are Phase A (structure vs fragility, recomputed on SHADE-80). Sections 5 to 7 are Phase B (GPU jobs 6 to 8). Section 8 is Phase C (LLM judge).
 
 **Phase A.** All numbers are for the fine-tuned monitor (run 2), agent-text attacks, success at the operating threshold (p < 0.865). There was no GPU or API use: everything is recomputed from the existing `attack/*.jsonl` records.
 
