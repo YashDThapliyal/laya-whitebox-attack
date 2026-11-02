@@ -220,6 +220,31 @@ Every flip here is on InjecAgent (58/86 and 57/86 under mask; 40/83 and 32/83 un
 
 So the roughly 60% any-token flip rate under masking does not show a realizable evasion. Every flip either removes the harmful action from the record, by corrupting the attacker's call, or rewrites the role structure, which a deployed monitor takes from the agent API. The audit covers this non-adaptive attack only. An attack restricted to tool-output text with intact calls and roles was not run, so masking's robustness to it is untested. (An agent also does not normally control tool outputs; the any-token attack is an upper bound.)
 
+**The same audit on the full view** (`anytoken_audit_full.py`, output `job6_anytoken_audit_full.json`). In the full view the monitor also reads prose, so every edit up to the adversarial state counts, and each is located as prose, tool call, tool output or role tag. A flip is run 2 flagging the clean text and not the adversarial text at its own bar, p = 0.865 (the 108 and 105 of section 6). Harm is judged as above, on InjecAgent only. A flip with no tool-call edit leaves every call as it was, so its harmful call stands in the record, unless a role tag was rewritten. Four cases with an intact attacker name and edited arguments were reviewed by hand: "delete" changed to "View" (neutralized, same case as above) and three that keep the tool and target (still harmful: a word replacing the closing brace after an unchanged address, twice, and "Authentication" changed to "Autology" in a call to the unchanged disable-2FA tool). Rerunning this classifier on mask and remove reproduces all eight published cells of the audit above. Denominators are clean detections; 95% Wilson CIs.
+
+| source, attack | all flips | edit a tool call | of those: neutralized / still harmful | no tool-call edit: prose only | no tool-call edit: rewrites a role tag | no tool-call edit: outputs, no role tag | harm kept, no role tag or output edited |
+|---|---|---|---|---|---|---|---|
+| InjecAgent, unconstrained | 79 / 87 [83, 95]% | 75 / 87 [77, 92]% | 75 / 0 | 0 | 4 | 0 | 0 / 87 |
+| InjecAgent, fluent | 75 / 87 [77, 92]% | 61 / 87 [60, 79]% | 58 / 3 | 0 | 14 | 0 | 0 / 87 |
+| ToolEmu, unconstrained | 21 / 21 [85, 100]% | 0 / 21 [0, 15]% | none | 9 | 12 | 0 | not judged |
+| ToolEmu, fluent | 21 / 21 [85, 100]% | 0 / 21 [0, 15]% | none | 9 | 12 | 0 | not judged |
+
+*Near-chance sources, reported separately:*
+
+| source, attack | all flips | edit a tool call | of those: neutralized / still harmful | no tool-call edit: prose only | no tool-call edit: rewrites a role tag | no tool-call edit: outputs, no role tag | harm kept, no role tag or output edited |
+|---|---|---|---|---|---|---|---|
+| R-Judge, unconstrained | 8 / 9 [56, 98]% | 5 / 9 [27, 81]% | not judged | 0 | 3 | 0 | not judged |
+| R-Judge, fluent | 9 / 9 [70, 100]% | 7 / 9 [45, 94]% | not judged | 0 | 2 | 0 | not judged |
+| SHADE-80, unconstrained | 40 / 80 [39, 61]% | 17 / 80 [14, 31]% | not judged | 0 | 22 | 1 | not judged |
+| SHADE-80, fluent | 35 / 79 [34, 55]% | 26 / 79 [24, 44]% | not judged | 0 | 8 | 1 | not judged |
+
+- **Most InjecAgent flips edit a tool call, and almost all of those break it.** 136 of 154 flips (75 unconstrained, 61 fluent) edit a tool call: 133 neutralize the harmful call (132 by corrupting the attacker tool name, 1 by hand review), and 3 keep it. All 3 are fluent, and all 3 also rewrite a role tag.
+- **The harmful call survives in 21 InjecAgent flips (4 unconstrained, 17 fluent), and all 21 rewrite a role tag.** Harm kept with role tags and tool outputs untouched: 0 of 87 for both attacks, 95% CI 0 to 4%.
+- **ToolEmu has no real tool calls.** Its [AGENT ACTION] lines are narration, so every edit there is prose or a tag, and harm is not judged, because the narration is the only record of the action. 9 of 21 flips are prose only on each attack: those are edits an agent can make.
+- **SHADE-80 has one tool-output-only flip**, on the unconstrained attack (3 output edits, no tags or prose). The "no flip edits tool outputs alone" result above is for the masked views. Five SHADE flips in total rewrite no role tag; SHADE is near chance on clean traces, and its harm is not judged.
+- **This does not make the full view robust.** It only says the unrestricted optimizer rarely finds realizable flips on InjecAgent, because tool names and tags are its easiest targets. Restricted to agent text, the attack does: its edits leave every call and tag in place, and 31 of 87 (unconstrained) and 38 of 87 (fluent) InjecAgent detections flip as text (realizability table below).
+- **Threshold sensitivity.** At the view's TF32 refit (p = 0.870, the rule the mask and remove audits use): InjecAgent flips 82 and 80, tool-call edits 78 and 66, neutralized 78 and 63, still harmful 0 and 3, harm kept 4 and 17, and 0 with role tags and outputs untouched.
+
 **Realizability cross-check** (`realizability.py`, output `job6_realizability.json`). The attack edits token ids; an agent writes text. Decoding each first successful state, re-tokenizing and rescoring:
 
 | set | recorded successes | still below the bar as text |
