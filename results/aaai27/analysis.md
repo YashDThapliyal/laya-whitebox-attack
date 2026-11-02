@@ -404,6 +404,17 @@ The two are strongly collinear (section 2), so this does not show that window co
 
 Editable fraction predicts success within InjecAgent on every seed, but it does so through case type. Once direct harm vs data stealing is in the model, editable fraction has no detectable effect on any seed or pooled, while data stealing keeps a large one. Within InjecAgent, clean margin is significant on seed 0 only (0.36 [0.18, 0.72]; seeds 1 and 2: 0.81 and 0.73, both p = 0.41), though pooled it holds (0.56 [0.35, 0.90]).
 
+*Without the R-Judge rows* (`seed_regressions_no_rjudge.py`, output `job8_regressions_no_rjudge.json`). R-Judge is near chance on clean traces, but its targets (9, 19 and 18) are rows in the fits above. Same model and unit on InjecAgent + ToolEmu:
+
+| fit | n (successes) | editable fraction OR [Wald 95%] | clean margin OR per SD [Wald 95%] | with window count: editable fraction OR | with window count: window count OR |
+|---|---|---|---|---|---|
+| seed 0 | 108 (44) | 2.71 [1.38, 5.33] | 0.30 [0.14, 0.64] | 0.89 [0.34, 2.35] | 0.20 [0.06, 0.65] |
+| seed 1 | 109 (52) | 1.78 [1.09, 2.90] | 0.64 [0.29, 1.39], p = 0.26 | 0.78 [0.34, 1.78] | 0.36 [0.15, 0.86] |
+| seed 2 | 109 (35) | 2.12 [1.12, 4.01] | 0.63 [0.28, 1.43], p = 0.27 | 0.72 [0.28, 1.87] | 0.17 [0.05, 0.61] |
+| pooled, seed fixed effects, clustered by trace | 326 (131), 109 traces | 2.11 [1.53, 2.92] | 0.43 [0.24, 0.78] | not fit | not fit |
+
+Dropping R-Judge moves both results. Clean margin stays significant on seed 0 and pooled but not on seeds 1 and 2 alone, so its "significant on every seed" depends on R-Judge rows. Editable fraction now clears 1 on all three seeds, though it still spans 1 on every seed once window count is added.
+
 **Text-level check.** The attack's own re-tokenized check, at the bar each run went to (0.5 for seeds 0 and 2, 0.368 for seed 1), agent text, unconstrained, for seeds 0 / 1 / 2: InjecAgent 23/87, 25/87, 13/87; ToolEmu 19/21, 17/22, 18/22; R-Judge 2/9, 13/19, 6/18.
 
 **Reading.**
@@ -411,7 +422,7 @@ Editable fraction predicts success within InjecAgent on every seed, but it does 
 - **The ordering replicates.** On every seed, agent-text edits flip ToolEmu (where the agent's narration is the record) about 90% of the time and InjecAgent 17 to 37%, and direct-harm traces flip far more often than data-stealing ones. This is the source-level form of the paper's structural claim, on three monitors. The trace-level form is weaker, as the regressions above show.
 - **The magnitude does not pin down.** Three monitors with the same config and clean AUROC 1.000 on InjecAgent flip 17%, 29% and 37% of its traces at the same bar, and seeds 1 and 2 differ significantly. Run 2's single-monitor InjecAgent rates should be reported with this spread, as between-monitor variation that includes the kernel noise noted above.
 - **Per-trace fragility is partly a property of the monitor, not only of the trace.** Most InjecAgent flips are not shared between two seeds. This limits any per-trace explanation drawn from one checkpoint.
-- **Editable fraction is a weaker trace-level predictor than section 2 suggests.** The direction replicates and the pooled effect is clear (OR 1.82 per 0.11), but on seeds 1 and 2 alone it is borderline, on val traces it cannot be separated from window count, and within InjecAgent it reduces to direct harm vs data stealing. The defensible claim is that structure predicts fragility (ToolEmu vs InjecAgent, direct harm vs data stealing, editable fraction pooled), not that editable fraction is established as the mechanism. Clean margin holds on every seed in the all-source fits.
+- **Editable fraction is a weaker trace-level predictor than section 2 suggests.** The direction replicates and the pooled effect is clear (OR 1.82 per 0.11), but on seeds 1 and 2 alone it is borderline, on val traces it cannot be separated from window count, and within InjecAgent it reduces to direct harm vs data stealing. The defensible claim is that structure predicts fragility (ToolEmu vs InjecAgent, direct harm vs data stealing, editable fraction pooled), not that editable fraction is established as the mechanism. Clean margin holds on every seed in the all-source fits, but on seed 0 and pooled only once R-Judge rows are dropped.
 - **Three monitors is few.** These ranges describe these three retrains. They are not a confidence interval over seeds.
 
 **Run notes.** Seeds 1 and 2 trained in 2.5 and 2.6 minutes with fused attention, as against 1.7 for run 2; the software environment of run 2's original training was not compared. The 11 steps after the resume test completed on one VM (129 minutes, a heartbeat every 4 minutes, no failed beats, no reclaims). The smoke step's short chain (a 10-step training, then small attacks including a `--resume` pass) never ran: the first attempts stopped at the resume gate, and the step was then marked done from the resume test. The full runs completed without it, but `attack.py --resume` was not exercised in this job.
