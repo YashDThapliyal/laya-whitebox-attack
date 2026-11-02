@@ -1,0 +1,68 @@
+{
+ "run2": {
+  "random_any": {
+   "k": 5,
+   "n": 117,
+   "ci95": [
+    0.018,
+    0.096
+   ]
+  },
+  "any_token_attack": {
+   "k": 108,
+   "n": 117,
+   "ci95": [
+    0.86,
+    0.959
+   ]
+  },
+  "fisher_attack_vs_random_any": {
+   "odds_ratio": 268.8,
+   "p": 2.2128176404061305e-48
+  }
+ },
+ "zeroshot": {
+  "random_any": {
+   "k": 14,
+   "n": 106,
+   "ci95": [
+    0.08,
+    0.21
+   ]
+  },
+  "any_token_attack": {
+   "k": 11,
+   "n": 106,
+   "ci95": [
+    0.059,
+    0.176
+   ]
+  },
+  "fisher_attack_vs_random_any": {
+   "odds_ratio": 0.7609022556390977,
+   "p": 0.6708967814991599
+  }
+ },
+ "run1": {
+  "random_any": {
+   "k": 3,
+   "n": 117,
+   "ci95": [
+    0.009,
+    0.073
+   ]
+  },
+  "any_token_attack": {
+   "k": 14,
+   "n": 117,
+   "ci95": [
+    0.073,
+    0.191
+   ]
+  },
+  "fisher_attack_vs_random_any": {
+   "odds_ratio": 5.165048543689321,
+   "p": 0.009792857773290142
+  }
+ }
+}

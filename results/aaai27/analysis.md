@@ -263,9 +263,17 @@ Clean points rescore within 0.009 of the attack's recorded margin, so the gaps c
 | any token, unconstrained | 40 / 53 [62, 85]% | 1 / 52 [0, 10]% | 0 / 53 [0, 7]% |
 | any token, fluent | 35 / 53 [53, 77]% | 1 / 52 [0, 10]% | 0 / 53 [0, 7]% |
 
-**Caveats on the control.** The random control is `val_agent_random`: 20 random substitutions in agent text (the full budget), on the same 117 val targets. For the any-token rows it is a narrower-scope baseline, and the attack states often use fewer than 20 edits. A matching any-token random control (the any-token attack's editable set and budget, 20 random substitutions, same 117 targets, scored on all three checkpoints) is queued on the job 8 VM and will replace this caveat.
+**Caveats on the control.** The random control is `val_agent_random`: 20 random substitutions in agent text (the full budget), on the same 117 val targets. For the any-token rows it is a narrower-scope baseline, and the attack states often use fewer than 20 edits. A matching any-token random control was therefore run (`random_any_control.py`, job 8 step `rand_any`): the any-token attack's editable set, candidate vocabulary and budget, 20 random substitutions (stopping early once below run 2's bar, like the agent-text control), on the same 117 targets, scored by all three checkpoints. Output: `job7_random_any_control.json`.
 
-**Reading.** Most run-2 flips do not carry over. Agent-text edits transfer above the random-edit rate on both checkpoints (Holm p at most 0.022), but only 14 to 28% of the time at the operating point. Any-token edits beat the control on run 1 (12% and 8%) but are not distinguishable from it on zero-shot Laya at the operating point (10% and 13% against 6%; p = 0.31 and 0.19). Deeper edits transfer more (17 to 34%) and all exceed the control. SHADE-80 edits essentially do not transfer. The attack is largely specific to the checkpoint it was optimized against, so the threat model it supports is an attacker with gradient access to the deployed monitor or a close surrogate.
+| any token, first state below p = 0.865 | run 2 | zero-shot Laya | run-1 Laya |
+|---|---|---|---|
+| any-token attack, unconstrained | 108 / 117 [86, 96]% | 11 / 106 [6, 18]% | 14 / 117 [7, 19]% |
+| random any-token edits (control) | 5 / 117 [2, 10]% | 14 / 106 [8, 21]% | 3 / 117 [1, 7]% |
+| Fisher exact, attack vs this control | p < 1e-40 | p = 0.67 | p = 0.010 |
+
+Against the matching control, the any-token attack transfers to run 1 (12% against 3%) but not to zero-shot Laya, where random edits over the same surface flip as many traces (13%) as the attack does (10%).
+
+**Reading.** Most run-2 flips do not carry over. Agent-text edits transfer above the random-edit rate on both checkpoints (Holm p at most 0.022), but only 14 to 28% of the time at the operating point. Any-token edits beat the control on run 1 (12% and 8%) but are not distinguishable from it on zero-shot Laya at the operating point (10% and 13% against 6%; p = 0.31 and 0.19), and against the matching any-token random control, which flips 13% of zero-shot detections by itself, the unconstrained attack shows no transfer to zero-shot Laya at all (p = 0.67). Deeper edits transfer more (17 to 34%) and all exceed the control. SHADE-80 edits essentially do not transfer. The attack is largely specific to the checkpoint it was optimized against, so the threat model it supports is an attacker with gradient access to the deployed monitor or a close surrogate.
 
 ## 7. Job 8: seed variance (in progress)
 
