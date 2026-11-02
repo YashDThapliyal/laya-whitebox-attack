@@ -201,7 +201,23 @@ Every flip here is on InjecAgent (58/86 and 57/86 under mask; 40/83 and 32/83 un
 | any token, unconstrained | 2 / 4 [15, 85]% | 3 / 5 [23, 88]% | 14 / 20 [48, 86]% | 22 / 53 [29, 55]% |
 | any token, fluent | 3 / 4 [30, 95]% | 4 / 5 [38, 96]% | 16 / 20 [58, 92]% | 21 / 52 [28, 54]% |
 
-**Reading.** Where the clean monitor works, masking stops narration edits by construction, but it gives up most of the clean signal outside InjecAgent, and any-token edits still flip 58 of 98 remaining detections under mask (59% [49, 68]) and 40 of 83 under remove (48% [38, 59]), without any adaptation to the masked view. They survive because 90% of those edits were in tool calls and tool outputs to begin with. An adaptive attack against the masked monitor would likely do at least as well. Masking trades attack surface for detection; it is not a free defense.
+**Reading.** Where the clean monitor works, masking stops narration edits by construction, but it gives up most of the clean signal outside InjecAgent. Any-token edits still flip 58 of 98 remaining detections under mask (59% [49, 68]) and 40 of 83 under remove (48% [38, 59]), without any adaptation to the masked view, because about 90% of those edits were in tool calls and tool outputs to begin with. The audit below shows that none of these flips is a realizable evasion, so masking's cost is the clean signal it gives up, not these flips.
+
+**Where the surviving any-token edits land** (`anytoken_edit_audit.py`, output `job6_anytoken_audit.json`). For every any-token flip under mask or remove, the edits outside agent prose (the only ones the masked monitor sees) were located by line: tool output content, tool-call name, tool-call arguments, or a role tag such as `[AGENT ACTION]`. Classes: (a) no edit in any tool call; (b) at least one. On InjecAgent the harmful action is marked exactly (every `[AGENT ACTION]` after the first is an injected attacker call), so each (b) case was checked against "same tool, same target or recipient, same payload". An edited attacker tool name (for example `BankManagerTransferFunds` to "BankManager emerged reprods") counts as neutralized. The three cases with an intact name and edited arguments were reviewed by hand: "delete" changed to "View" (neutralized); a corrupted verb with the same tool, amount and account (still harmful); a word appended after an unchanged address (still harmful). Role-tag edits are counted separately because a deployed monitor takes roles from the agent API, so an agent cannot make them. Denominators are the detections that survive the view, as above; 95% Wilson CIs.
+
+| InjecAgent + ToolEmu | all flips | (a) tool outputs only | (a) tool outputs and role tags | (b) harmful call kept | (b) harmful call neutralized | any role-tag edit |
+|---|---|---|---|---|---|---|
+| mask, unconstrained | 58 / 98 [49, 68]% | 0 / 98 [0, 4]% | 3 / 98 [1, 9]% | 0 / 98 [0, 4]% | 55 / 98 [46, 66]% | 47 / 98 [38, 58]% |
+| mask, fluent | 57 / 98 [48, 67]% | 0 / 98 [0, 4]% | 9 / 98 [5, 16]% | 0 / 98 [0, 4]% | 48 / 98 [39, 59]% | 49 / 98 [40, 60]% |
+| remove, unconstrained | 40 / 83 [38, 59]% | 0 / 83 [0, 4]% | 2 / 83 [1, 8]% | 1 / 83 [0, 6]% | 37 / 83 [34, 55]% | 32 / 83 [29, 49]% |
+| remove, fluent | 32 / 83 [29, 49]% | 0 / 83 [0, 4]% | 6 / 83 [3, 15]% | 1 / 83 [0, 6]% | 25 / 83 [21, 41]% | 26 / 83 [22, 42]% |
+
+- **No flip comes from tool-output edits alone.** Every class (a) flip also edits a role tag.
+- **Most class (b) flips break the harmful call itself**, usually by corrupting the attacker tool's name. The two that keep it also edit a role tag.
+- **Harmful call kept and no role tag edited: 0 of 98 (mask) and 0 of 83 (remove)**, 95% CI 0 to 4%, for both attacks.
+- **Near-chance sources:** on R-Judge (4 or 5 detections) and SHADE-80 (20 under mask, 52 to 53 under remove), every flip edits a role tag. Neither marks the harmful call, so the 1 to 21 (b) cases per set there were not judged.
+
+So the roughly 60% any-token flip rate under masking does not show a realizable evasion. Every flip either removes the harmful action from the record, by corrupting the attacker's call, or rewrites the role structure, which a deployed monitor takes from the agent API. The audit covers this non-adaptive attack only. An attack restricted to tool-output text with intact calls and roles was not run, so masking's robustness to it is untested. (An agent also does not normally control tool outputs; the any-token attack is an upper bound.)
 
 **Realizability cross-check** (`realizability.py`, output `job6_realizability.json`). The attack edits token ids; an agent writes text. Decoding each first successful state, re-tokenizing and rescoring:
 
@@ -213,7 +229,7 @@ Every flip here is on InjecAgent (58/86 and 57/86 under mask; 40/83 and 32/83 un
 | any token, fluent (val) | 114 | 105 |
 | any token, unconstrained / fluent (SHADE-80) | 53 / 53 | 40 / 35 |
 
-Clean points rescore within 0.009 of the attack's recorded margin, so the gaps come from re-tokenization, not from scoring differences. This agrees with the attack's own `success_retokenized` field and the "retokenized" column in `SUMMARY.md`; the README headline table reports token-level success. Only the first crossing on each path is checked, so these counts are lower bounds.
+Clean points rescore within 0.009 of the attack's recorded margin, so the gaps come from re-tokenization, not from scoring differences. Coverage: `job6_realizability.json` covers the full view only, on run 2, for all ten attack sets (agent text and any token, unconstrained and fluent, val and SHADE-80, plus the threshold-0.5 runs), at the first state below p = 0.865. It does not cover the masked views; those flips are already text-level, since each masked view was decoded to text and re-tokenized for scoring. This agrees with the attack's own `success_retokenized` field and the "retokenized" column in `SUMMARY.md`; the README headline table reports token-level success. Only the first crossing on each path is checked, so these counts are lower bounds.
 
 ## 6. Job 7: do run-2 flips transfer to other checkpoints?
 
@@ -247,7 +263,7 @@ Clean points rescore within 0.009 of the attack's recorded margin, so the gaps c
 | any token, unconstrained | 40 / 53 [62, 85]% | 1 / 52 [0, 10]% | 0 / 53 [0, 7]% |
 | any token, fluent | 35 / 53 [53, 77]% | 1 / 52 [0, 10]% | 0 / 53 [0, 7]% |
 
-**Caveats on the control.** The random control is `val_agent_random`: 20 random substitutions in agent text (the full budget), on the same 117 val targets. For the any-token rows it is a narrower-scope baseline, and the attack states often use fewer than 20 edits.
+**Caveats on the control.** The random control is `val_agent_random`: 20 random substitutions in agent text (the full budget), on the same 117 val targets. For the any-token rows it is a narrower-scope baseline, and the attack states often use fewer than 20 edits. A matching any-token random control (the any-token attack's editable set and budget, 20 random substitutions, same 117 targets, scored on all three checkpoints) is queued on the job 8 VM and will replace this caveat.
 
 **Reading.** Most run-2 flips do not carry over. Agent-text edits transfer above the random-edit rate on both checkpoints (Holm p at most 0.022), but only 14 to 28% of the time at the operating point. Any-token edits beat the control on run 1 (12% and 8%) but are not distinguishable from it on zero-shot Laya at the operating point (10% and 13% against 6%; p = 0.31 and 0.19). Deeper edits transfer more (17 to 34%) and all exceed the control. SHADE-80 edits essentially do not transfer. The attack is largely specific to the checkpoint it was optimized against, so the threat model it supports is an attacker with gradient access to the deployed monitor or a close surrogate.
 
