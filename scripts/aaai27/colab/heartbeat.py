@@ -5,7 +5,9 @@ busy GPU did not count as activity. So, every INTERVAL seconds:
   1. run a trivial kernel command on the VM (`colab exec`), and log the result;
   2. check that the keep-alive daemon (0.6.0 CLI, which pings /keep-alive/ every 60 s) is running and that its last
      HTTP 200 ping for this endpoint is recent; if not, (re)start it and log why.
-Exits (stopping its keep-alive) once the session is gone, e.g. after `colab stop`.
+Exits (stopping its keep-alive) once the session is gone, e.g. after `colab stop`. Stops the VM itself if no
+supervisor or poller has called the CLI for it in LEASE_MAX seconds (cli_util lease), e.g. after the supervisor
+was killed.
 Start it detached (newvm.sh does), so stopping the supervisor that allocated the VM does not kill it.
 """
 from __future__ import annotations
@@ -19,7 +21,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from cli_util import run_cli
+from cli_util import lease_path, run_cli
 
 HERE = Path(__file__).resolve().parent
 WORK = Path(os.environ["COLAB_WORK"])
@@ -27,6 +29,7 @@ C7 = str(HERE / "colab7")
 PY6 = "/Users/yash/.local/share/uv/tools/google-colab-cli/bin/python"  # the 0.6.0 CLI, which has keep-alive
 CLI_LOG = Path.home() / ".config" / "colab-cli" / "colab.log"
 INTERVAL = 240  # seconds between kernel commands (requirement: at most 5 minutes)
+LEASE_MAX = 1800  # stop the VM if no supervisor/poller has called the CLI for it for this long (seconds)
 PING_STALE = 180  # keep-alive pings every 60 s; no 200 for this long means it is not working
 GONE_RE = re.compile(r"session '[^']*' not found|no active sessions", re.IGNORECASE)
 
@@ -36,7 +39,7 @@ def ts() -> str:
 
 
 def run(cmd: list[str], timeout: int) -> tuple[int, str]:
-    return run_cli(cmd, timeout)
+    return run_cli(cmd, timeout, lease=False)  # the heartbeat itself must not keep the lease fresh
 
 
 def last_ping_age(endpoint: str) -> float | None:
@@ -87,8 +90,20 @@ class Heartbeat:
         _, out = run([C7, "status", "-s", self.name], 120)
         return bool(GONE_RE.search(out))
 
+    def lease_expired(self) -> bool:
+        path = lease_path(self.name)
+        age = time.time() - path.stat().st_mtime if path.exists() else float("inf")
+        if age <= LEASE_MAX:
+            return False
+        self.log(f"LEASE expired: no supervisor/poller CLI call for this VM in {age:.0f}s > {LEASE_MAX}s; stopping it")
+        _, out = run([C7, "stop", "-s", self.name], 180)
+        self.log(f"stop: {out.strip()[-120:]!r}")
+        return True
+
     def beat(self) -> bool:
-        """One heartbeat; returns False once the session is gone."""
+        """One heartbeat; returns False once the session is gone (or was stopped because its lease expired)."""
+        if self.lease_expired():
+            return False
         t0 = time.time()
         rc, out = run([C7, "exec", "-s", self.name, "-f", str(self.code)], 90)
         ok = "HB_OK" in out

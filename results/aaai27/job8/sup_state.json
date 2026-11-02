@@ -1,0 +1,14 @@
+{
+ "done": [],
+ "skipped": {},
+ "fails": {
+  "smoke": 1
+ },
+ "reclaims": 0,
+ "vms": [
+  "laya81",
+  "laya82"
+ ],
+ "vm": null,
+ "vm_ready": false
+}

@@ -1,0 +1,8 @@
+Fetching 15 files:   0%|          | 0/15 [00:00<?, ?it/s]Fetching 15 files: 100%|██████████| 15/15 [00:00<00:00, 1651.34it/s]
+train 1604  val 255  device cuda  head_len 103  state_budget 408
+RESUMED from out/resume_test/B/resume/state.pt: ep 2 next_i 0 micro 101
+ep 2 micro 120 loss 0.0408 lr 8.47e-06 2.3min
+saved state ep 2 next_i 304 micro 120
+epoch 2 val: {'auroc': 0.9938169066076044, 'acc@0.5': 0.9529411764705882, 'nll': 0.14956018304085186, 'auroc_injecagent': 0.99974173553719, 'auroc_r-judge': 0.8585526315789473, 'auroc_toolemu': 1.0, 'train_loss': 0.034337930138431616}
+stopping: time/step cap reached
+saved out/resume_test/B/model {'best_epoch': 2, 'val_auroc': 0.9938169066076044, 'temperature': 1.8714003063144606, 'threshold': 0.23399999737739563, 'val_f1_at_thr': 0.9624060150375939, 'val_acc_at_thr': 0.9607843137254902, 'val_majority_baseline': 0.5058823529411764, 'minutes': 2.7916485548019407, 'attn': 'math', 'train_loop_seconds': 29.44719696044922, 'train_loop_steps': 29, 'args': {'epochs': 2, 'bs': 16, 'accum': 1, 'lr_enc': 2e-05, 'lr_head': 0.0001, 'max_minutes': 110, 'max_steps': 130, 'out': 'out/resume_test/B/model', 'ckpt_every': 100, 'grad_ckpt': False, 'seed': 1, 'calib_out': 'out/resume_test/B/calibration.json', 'work_dir': 'out/resume_test/B/work', 'resume_dir': 'out/resume_test/B/resume', 'ckpt_minutes': 1000.0, 'ckpt_steps': 20, 'crash_at_step': 0, 'deterministic': True, 'attn_math': True}}

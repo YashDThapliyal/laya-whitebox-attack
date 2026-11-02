@@ -1,0 +1,9 @@
+16:43:23 heartbeat start name=laya81 endpoint=gpu-a100-s-ft-usc1b0-1khbi8ebvrg7m interval=240s pid=27431
+16:43:23 KEEPALIVE started pid=27443 (initial)
+16:43:25 HB ok 2.4s | keepalive pid=27443 last_ping=1s ago
+16:47:24 HB ok 1.1s | keepalive pid=27443 last_ping=0s ago
+16:51:47 HB ok 23.0s | keepalive pid=27443 last_ping=22s ago
+16:55:27 HB ok 3.8s | keepalive pid=27443 last_ping=59s ago
+17:00:17 HB ok 52.8s | keepalive pid=27443 last_ping=45s ago
+17:03:24 session gone, heartbeat exiting
+17:03:24 heartbeat end

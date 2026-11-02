@@ -1,0 +1,24 @@
+{
+ "order_steps": [
+  130,
+  130
+ ],
+ "order_identical": true,
+ "best_epoch": [
+  2,
+  2
+ ],
+ "metrics_a": {
+  "nll": 0.14956018304085186,
+  "auroc_injecagent": 0.99974173553719,
+  "auroc_r-judge": 0.8585526315789473,
+  "auroc_toolemu": 1.0
+ },
+ "metrics_b": {
+  "nll": 0.14956018304085186,
+  "auroc_injecagent": 0.99974173553719,
+  "auroc_r-judge": 0.8585526315789473,
+  "auroc_toolemu": 1.0
+ },
+ "max_abs_weight_diff_info_only": null
+}

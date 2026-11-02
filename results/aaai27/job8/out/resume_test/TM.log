@@ -1,0 +1,9 @@
+Fetching 15 files:   0%|          | 0/15 [00:00<?, ?it/s]Fetching 15 files: 100%|██████████| 15/15 [00:00<00:00, 1805.04it/s]
+train 1604  val 255  device cuda  head_len 103  state_budget 408
+epoch 0 (zero-shot) val: {'auroc': 0.7372339116525164, 'acc@0.5': 0.6823529411764706, 'nll': 0.6458963869249119, 'auroc_injecagent': 0.7774405991735537, 'auroc_r-judge': 0.4457236842105263, 'auroc_toolemu': 0.7892561983471075}
+ep 1 micro 20 loss 0.5037 lr 1.90e-05 0.2min
+ep 1 micro 40 loss 0.3221 lr 1.46e-05 0.3min
+ep 1 micro 60 loss 0.2482 lr 8.47e-06 0.5min
+epoch 1 val: {'auroc': 0.9855112587670727, 'acc@0.5': 0.9372549019607843, 'nll': 0.26592591879256655, 'auroc_injecagent': 1.0, 'auroc_r-judge': 0.5526315789473684, 'auroc_toolemu': 1.0, 'train_loss': 0.24815974356618728}
+stopping: time/step cap reached
+saved out/resume_test/TM/model {'best_epoch': 1, 'val_auroc': 0.9855112587670727, 'temperature': 2.296858983896721, 'threshold': 0.2378000020980835, 'val_f1_at_thr': 0.9438202247191011, 'val_acc_at_thr': 0.9411764705882353, 'val_majority_baseline': 0.5058823529411764, 'minutes': 0.6586978038152059, 'attn': 'math', 'train_loop_seconds': 30.408053159713745, 'train_loop_steps': 60, 'args': {'epochs': 1, 'bs': 16, 'accum': 1, 'lr_enc': 2e-05, 'lr_head': 0.0001, 'max_minutes': 110, 'max_steps': 60, 'out': 'out/resume_test/TM/model', 'ckpt_every': 100, 'grad_ckpt': False, 'seed': 1, 'calib_out': 'out/resume_test/TM/calibration.json', 'work_dir': 'out/resume_test/TM/work', 'resume_dir': None, 'ckpt_minutes': 5.0, 'ckpt_steps': 0, 'crash_at_step': 0, 'deterministic': False, 'attn_math': True}}

@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/content/proj/scripts/aaai27/compare_train_runs.py", line 91, in <module>
+    main()
+    ~~~~^^
+  File "/content/proj/scripts/aaai27/compare_train_runs.py", line 87, in main
+    print(json.dumps(compare(Path(sys.argv[1]), Path(sys.argv[2])), indent=1))
+                     ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/content/proj/scripts/aaai27/compare_train_runs.py", line 55, in compare
+    "metrics_a": best_metrics(a), "metrics_b": best_metrics(b),
+                 ~~~~~~~~~~~~^^^
+  File "/content/proj/scripts/aaai27/compare_train_runs.py", line 39, in best_metrics
+    rows = {r["epoch"]: r["val"] for r in read_jsonl(run / "work" / "train_log.jsonl")}
+                        ~^^^^^^^
+KeyError: 'val'

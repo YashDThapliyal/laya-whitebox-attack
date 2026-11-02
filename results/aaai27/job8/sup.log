@@ -1,0 +1,45 @@
+16:43:18 supervisor start: laya8  done=[]
+16:43:23 newvm laya81: NEWVM_OK laya81 endpoint=gpu-a100-s-ft-usc1b0-1khbi8ebvrg7m heartbeat_pid=27431
+16:43:32   poll 16:43:32 bal=177.66 task=24.58 tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+16:45:05   poll 16:45:05 bal=177.66 task=24.75 JOB_EXIT=0
+16:45:05   poll 16:45:05 POLL_EXIT 0 FINISHED
+16:45:09 step smoke: launched on laya81
+16:45:21   poll 16:45:21 bal=177.66 task=24.78
+16:47:00   poll 16:47:00 bal=177.22 task=24.97 HB == A (uninterrupted)
+16:48:40   poll 16:48:40 bal=177.22 task=25.15 HB == A2 (uninterrupted)
+16:50:21   poll 16:50:21 bal=177.22 task=25.34 HB == A2 (uninterrupted)
+16:53:02   poll 16:53:02 bal=176.66 task=25.64 HB == B (crash at 115)
+16:55:17   poll 16:55:17 bal=176.66 task=25.90 HB == C (crash at 125)
+17:05:51 NOTE: supervisor killed by Claude Code memory-pressure reaper at ~16:56 (not a job or VM problem); smoke step followed to the end with poll.py, laya81 stopped. smoke JOB_EXIT=1: resume runs B and C crashed (RNG state loaded onto CUDA, set_rng_state needs CPU tensors) -> counted as smoke failure 1/2. Fixed in train_monitor.py.
+17:19:00 NOTE: per the user, both smoke failures were resume-code bugs, fails reset; smoke is now stop_on_fail (a failure stops job 8 and reports). Gate changed: same batch order + best-epoch per-source AUROC and val loss within the A vs A2 spread; attention kernel chosen by timing (math if <= 1.5x slower).
+17:19:15 supervisor start: laya8  done=[]
+17:19:19 newvm laya82: NEWVM_FAIL no endpoint for laya82
+17:20:31 NOTE: laya82 never allocated (HTTP 412: account at its 2-A100 limit, both held by another session, 3b-gen and 3b-scorer). Supervisor now waits for capacity (retry every 5 min, up to 6 h).
+17:20:34 supervisor start: laya8  done=[]
+17:20:35 newvm laya82: NEWVM_FAIL no endpoint for laya82
+17:20:36 no A100 yet (Current balance: 173.03 compute units Usage rate: 13.46/hr Active assignments: 2); retrying in 300s
+17:25:38 newvm laya82: NEWVM_FAIL no endpoint for laya82
+17:25:38 no A100 yet (Current balance: 171.92 compute units Usage rate: 13.46/hr Active assignments: 2); retrying in 300s
+17:30:40 newvm laya82: NEWVM_FAIL no endpoint for laya82
+17:30:41 no A100 yet (Current balance: 170.79 compute units Usage rate: 13.46/hr Active assignments: 2); retrying in 300s
+17:35:45 newvm laya82: NEWVM_OK laya82 endpoint=gpu-a100-s-ft-usc1b0-1hu33lonhcnf8 heartbeat_pid=10121
+17:36:08   poll 17:36:08 bal=169.67 task=26.77 tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+17:37:40   poll 17:37:40 bal=169.32 task=26.94 JOB_EXIT=0
+17:37:40   poll 17:37:40 POLL_EXIT 0 FINISHED
+17:37:43 step smoke: launched on laya82
+17:38:42   poll 17:38:42 bal=169.32 task=27.05
+17:39:36 NOTE: supervisor stopped by me to add step rand_any (random any-token control, user request) between smoke and train1; restarting, it re-attaches to the running smoke step.
+17:39:36 supervisor start: laya8  done=[]
+17:39:40 step smoke: already running on laya82, re-attaching (no upload, no relaunch)
+17:41:36   poll 17:41:36 bal=169.32 task=27.38 HB == A (uninterrupted)
+17:44:10   poll 17:44:10 bal=168.19 task=27.67 HB == A2 (uninterrupted)
+17:46:10   poll 17:46:10 bal=168.19 task=27.89 HB == B (crash at 115)
+17:48:03   poll 17:48:03 bal=167.08 task=28.10 HB == B (resume)
+17:49:58   poll 17:49:58 bal=167.08 task=28.32 HB == C (crash at 125)
+17:51:57   poll 17:51:56 bal=165.98 task=28.54 HB == C (resume)
+17:53:52   poll 17:53:52 bal=165.98 task=28.75 JOB_EXIT=1
+17:54:15   poll 17:54:15 POLL_EXIT 1 JOB_FAILED JOB_EXIT=1
+17:54:15 step smoke: JOB_FAILED (failure 1/2)
+17:54:15 STOPPING: stop_on_fail
+17:54:16 stopped laya82
+17:55:08 NOTE: smoke JOB_EXIT=1 came from a bug in compare_train_runs.py (KeyError 'val': it read the per-step loss rows of train_log.jsonl), not from resuming: B and C resumed and finished (rc 0). Gate re-evaluated locally on the downloaded logs with the fixed script: PASS (cmp_A_*.local.json, gate_local.txt). Per the user, job 8 stays stopped until they say otherwise.

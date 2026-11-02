@@ -8,7 +8,8 @@ Poll outcomes: SESSION_GONE = reclaim -> new VM and relaunch, not counted as a f
 failure (stalled processes are killed first); a step that fails twice is skipped. CU_CAP (this task's own VM usage,
 task_usage.py, reached spec "task_cap") -> stop the VM and exit 5. LOW_BALANCE (account balance < 15) -> exit 3
 leaving the VM up (top-up needed). A connection error on a VM that is still up is a failure, not a reclaim, and more
-than MAX_RECLAIMS reclaims in one run stops the job (exit 6). The VM is stopped when the job ends or exits early.
+than MAX_RECLAIMS reclaims in one run stops the job (exit 6). A step with "stop_on_fail" stops the job on its
+first failure (exit 7) instead of retrying or skipping. The VM is stopped when the job ends or exits early.
 Every VM gets heartbeat.py (newvm.sh), logged to <ldir>/heartbeat/<vm>.log.
 
 Paths: code lives next to this file; sessions, staging, transfer chunks and step scripts live in $COLAB_WORK.
@@ -39,6 +40,7 @@ from cli_util import run_cli
 CHUNK = "50m"
 MAX_RECLAIMS = 8  # per supervisor run; beyond this something is wrong, stop and report
 MAX_FAILS = 2
+ALLOC_RETRY_S = 300
 GONE_RE = re.compile(r"session '[^']*' not found|no active sessions", re.IGNORECASE)
 
 
@@ -107,6 +109,18 @@ class Sup:
             if GONE_RE.search(out):
                 raise ConnectionError("session gone")
         raise ConnectionError(f"upload failed: {local}")
+
+    def step_running(self, log_remote: str) -> bool:
+        """True if a launch_bg job still holds this log's lock (the lock is held by the job and its children)."""
+        out = self.rsh(f"if [ -e {log_remote}.lock ] && ! flock -n {log_remote}.lock true; then echo HELD; else echo FREE; fi")
+        return "HELD" in out
+
+    def pre_uploads(self, step: dict) -> None:
+        """Files a step needs that setup does not provide: small ones ("pre_uploads") and chunked big ones."""
+        for local, remote in step.get("pre_uploads", []):
+            self.up(local, remote)
+        for local, remote in step.get("pre_big_uploads", []):
+            self.push_big(local, remote)
 
     def launch_bg(self, script_remote: str, log_remote: str) -> None:
         """Start script_remote in the background, logging to log_remote and appending JOB_EXIT=<rc>.
@@ -192,18 +206,27 @@ class Sup:
         return not GONE_RE.search(out)
 
     def new_vm(self) -> None:
-        for attempt in range(4):
-            name = f"{self.spec['name']}{len(self.st['vms']) + 1}"
-            self.st["vms"].append(name)
-            self.st["vm"], self.st["vm_ready"] = name, False
-            self.save()
+        """Allocate a VM, waiting for capacity: the account allows 2 A100s at once and other sessions may hold both.
+        Retries every ALLOC_RETRY_S until spec "alloc_wait_hours" (default 6) have passed. A name is only used up
+        once a VM was actually created under it."""
+        deadline = time.time() + 3600 * self.spec.get("alloc_wait_hours", 6)
+        name = f"{self.spec['name']}{len(self.st['vms']) + 1}"
+        while True:
             hb_log = self.ldir / "heartbeat" / f"{name}.log"
-            p = subprocess.run([str(HERE / "newvm.sh"), name, str(hb_log)], capture_output=True, text=True, timeout=900, check=False)
-            self.log(f"newvm {name}: {p.stdout.strip().splitlines()[-1] if p.stdout.strip() else p.stderr[-200:]}")
+            p = subprocess.run([str(HERE / "newvm.sh"), name, str(hb_log)], capture_output=True, text=True, timeout=900,
+                               check=False)
+            last = p.stdout.strip().splitlines()[-1] if p.stdout.strip() else p.stderr[-200:]
+            self.log(f"newvm {name}: {last}")
             if "NEWVM_OK" in p.stdout:
+                self.st["vms"].append(name)
+                self.st["vm"], self.st["vm_ready"] = name, False
+                self.save()
                 return
-            time.sleep(120)
-        raise SystemExit("could not allocate an A100 after 4 attempts")
+            if time.time() > deadline:
+                raise SystemExit(f"could not allocate an A100 within {self.spec.get('alloc_wait_hours', 6)} h")
+            _, usage = self.cli("usage", timeout=120)
+            self.log(f"no A100 yet ({' '.join(usage.split())[-90:]}); retrying in {ALLOC_RETRY_S}s")
+            time.sleep(ALLOC_RETRY_S)
 
     def setup_vm(self) -> None:
         su = self.spec["setup"]
@@ -284,11 +307,15 @@ class Sup:
                     if (self.ldir / rel).exists() and step.get("resume", False):
                         self.rsh(f"mkdir -p $(dirname {rdir}/{rel})")
                         self.up(str(self.ldir / rel), f"{rdir}/{rel}")
-                script = S / "steps" / f"{self.spec['name']}_{name}.sh"
-                script.write_text(self.step_script(step))
-                self.up(str(script), f"{rdir}/steps/{name}.sh")
-                self.launch_bg(f"{rdir}/steps/{name}.sh", f"{rdir}/steps/{name}.log")
-                self.log(f"step {name}: launched on {self.st['vm']}")
+                if self.step_running(f"{rdir}/steps/{name}.log"):  # e.g. the supervisor was restarted mid-step
+                    self.log(f"step {name}: already running on {self.st['vm']}, re-attaching (no upload, no relaunch)")
+                else:
+                    self.pre_uploads(step)
+                    script = S / "steps" / f"{self.spec['name']}_{name}.sh"
+                    script.write_text(self.step_script(step))
+                    self.up(str(script), f"{rdir}/steps/{name}.sh")
+                    self.launch_bg(f"{rdir}/steps/{name}.sh", f"{rdir}/steps/{name}.log")
+                    self.log(f"step {name}: launched on {self.st['vm']}")
                 rc = self.poll(f"steps/{name}.log", outputs + sublogs, rdir, step.get("stall", 300))
             except ConnectionError as e:
                 self.log(f"step {name}: connection/session problem: {e}")
@@ -319,6 +346,8 @@ class Sup:
             self.st["fails"][name] = self.st["fails"].get(name, 0) + 1
             self.save()
             self.log(f"step {name}: {'STALLED' if rc == 4 else 'JOB_FAILED'} (failure {self.st['fails'][name]}/{MAX_FAILS})")
+            if step.get("stop_on_fail"):
+                return "stop_on_fail"
             if self.st["fails"][name] >= MAX_FAILS:
                 return "skipped"
 
@@ -346,6 +375,9 @@ class Sup:
                     if res == "too_many_reclaims":
                         self.stop_vm()
                         return 6
+                    if res == "stop_on_fail":  # a gating step failed: stop and report, do not skip ahead
+                        self.stop_vm()
+                        return 7
                     return 5 if res == "cu_cap" else 3
                 self.save()
                 self.log(f"step {step['name']}: {res}")

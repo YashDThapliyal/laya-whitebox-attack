@@ -1,0 +1,7 @@
+{
+ "sec_per_step_fused": 0.2723046183586121,
+ "sec_per_step_math": 0.5068008859952291,
+ "ratio_math_over_fused": 1.8611542068221432,
+ "rule": "math if ratio <= 1.5",
+ "choice": "fused"
+}

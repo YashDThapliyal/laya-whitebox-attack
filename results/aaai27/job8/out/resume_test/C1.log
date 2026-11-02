@@ -1,0 +1,18 @@
+Fetching 15 files:   0%|          | 0/15 [00:00<?, ?it/s]Fetching 15 files: 100%|██████████| 15/15 [00:00<00:00, 1589.84it/s]
+train 1604  val 255  device cuda  head_len 103  state_budget 408
+epoch 0 (zero-shot) val: {'auroc': 0.7372339116525164, 'acc@0.5': 0.6823529411764706, 'nll': 0.6458963869249119, 'auroc_injecagent': 0.7774405991735537, 'auroc_r-judge': 0.4457236842105263, 'auroc_toolemu': 0.7892561983471075}
+ep 1 micro 20 loss 0.5192 lr 1.99e-05 0.2min
+saved state ep 1 next_i 320 micro 20
+ep 1 micro 40 loss 0.3707 lr 1.90e-05 0.6min
+saved state ep 1 next_i 640 micro 40
+ep 1 micro 60 loss 0.2931 lr 1.72e-05 1.0min
+saved state ep 1 next_i 960 micro 60
+ep 1 micro 80 loss 0.2697 lr 1.46e-05 1.4min
+saved state ep 1 next_i 1280 micro 80
+ep 1 micro 100 loss 0.2351 lr 1.16e-05 1.8min
+saved state ep 1 next_i 1600 micro 100
+epoch 1 val: {'auroc': 0.9933554817275747, 'acc@0.5': 0.9607843137254902, 'nll': 0.11056745901207927, 'auroc_injecagent': 1.0, 'auroc_r-judge': 0.8125, 'auroc_toolemu': 1.0, 'train_loss': 0.23278237147531058}
+saved state ep 2 next_i 0 micro 101
+ep 2 micro 120 loss 0.0408 lr 8.47e-06 2.6min
+saved state ep 2 next_i 304 micro 120
+crash_at_step 125: hard exit

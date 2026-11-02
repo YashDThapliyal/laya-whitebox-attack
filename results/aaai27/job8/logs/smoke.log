@@ -1,0 +1,57 @@
+== A (uninterrupted)
+rc=0
+== A2 (uninterrupted)
+rc=0
+== B (crash at 115)
+rc=137 (137 expected)
+saved state ep 2 next_i 0 micro 101
+crash_at_step 115: hard exit
+== B (resume)
+rc=0
+RESUMED from out/resume_test/B/resume/state.pt: ep 2 next_i 0 micro 101
+== C (crash at 125)
+rc=137 (137 expected)
+saved state ep 2 next_i 304 micro 120
+crash_at_step 125: hard exit
+== C (resume)
+rc=0
+RESUMED from out/resume_test/C/resume/state.pt: ep 2 next_i 304 micro 120
+== A vs B
+    rows = {r["epoch"]: r["val"] for r in read_jsonl(run / "work" / "train_log.jsonl")}
+                        ~^^^^^^^
+KeyError: 'val'
+== A vs C
+    rows = {r["epoch"]: r["val"] for r in read_jsonl(run / "work" / "train_log.jsonl")}
+                        ~^^^^^^^
+KeyError: 'val'
+== A vs A2
+    rows = {r["epoch"]: r["val"] for r in read_jsonl(run / "work" / "train_log.jsonl")}
+                        ~^^^^^^^
+KeyError: 'val'
+== deterministic-kernel warnings in A.log:
+      1 saved out/resume_test/A/model {'best_epoch': 2, 'val_auroc': 0.9938169066076044, 'temperature': 1.8714003063144606, 'threshold': 0.23399999737739563, 'val_f1_at_thr': 0.9624060150375939, 'val_acc_at_thr': 0.9607843137254902, 'val_majority_baseline': 0.5058823529411764, 'minutes': 3.0809707125027974, 'attn': 'math', 'train_loop_seconds': 153.7821750640869, 'train_loop_steps': 130, 'args': {'epochs': 2, 'bs': 16, 'accum': 1, 'lr_enc': 2e-05, 'lr_head': 0.0001, 'max_minutes': 110, 'max_steps': 130, 'out': 'out/resume_test/A/model', 'ckpt_every': 100, 'grad_ckpt': False, 'seed': 1, 'calib_out': 'out/resume_test/A/calibration.json', 'work_dir': 'out/resume_test/A/work', 'resume_dir': 'out/resume_test/A/resume', 'ckpt_minutes': 1000.0, 'ckpt_steps': 20, 'crash_at_step': 0, 'deterministic': True, 'attn_math': True}}
+Traceback (most recent call last):
+  File "/content/proj/scripts/aaai27/compare_train_runs.py", line 91, in <module>
+    main()
+    ~~~~^^
+  File "/content/proj/scripts/aaai27/compare_train_runs.py", line 86, in main
+    gate(Path(sys.argv[2]))
+    ~~~~^^^^^^^^^^^^^^^^^^^
+  File "/content/proj/scripts/aaai27/compare_train_runs.py", line 71, in gate
+    ref = json.loads((out / "cmp_A_A2.json").read_text())
+  File "/usr/lib/python3.13/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/usr/lib/python3.13/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+== timing: fused
+rc=0
+== timing: math
+rc=0
+ATTN_TIMING fused 0.272 s/step  math 0.507 s/step  ratio 1.86  -> fused
+RESUME_TEST_DONE
+tail: cannot open 'logs/smoke_chain.log' for reading: No such file or directory

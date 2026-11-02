@@ -1,0 +1,22 @@
+HB == A (uninterrupted)
+HB == A (uninterrupted)
+HB == A (uninterrupted)
+HB == A2 (uninterrupted)
+HB == A2 (uninterrupted)
+HB == A2 (uninterrupted)
+HB == B (crash at 115)
+HB == B (crash at 115)
+HB == B (crash at 115)
+HB == B (resume)
+HB == C (crash at 125)
+HB == C (crash at 125)
+HB == C (crash at 125)
+HB == C (resume)
+HB == timing: fused
+HB == timing: math
+== logs/smoke.log
+rc=0
+ATTN_TIMING fused 0.272 s/step  math 0.507 s/step  ratio 1.86  -> fused
+RESUME_TEST_DONE
+tail: cannot open 'logs/smoke_chain.log' for reading: No such file or directory
+JOB_EXIT=1

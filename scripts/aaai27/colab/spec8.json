@@ -29,9 +29,77 @@
     "out/smoke/f_val_agent.jsonl",
     "out/smoke/val_all.jsonl",
     "logs/smoke_chain.log",
+    "out/resume_test/A.log",
+    "out/resume_test/A2.log",
+    "out/resume_test/B1.log",
+    "out/resume_test/B2.log",
+    "out/resume_test/C1.log",
+    "out/resume_test/C2.log",
+    "out/resume_test/TF.log",
+    "out/resume_test/TM.log",
     "out/resume_test/cmp_A_B.json",
+    "out/resume_test/cmp_A_B.err",
     "out/resume_test/cmp_A_C.json",
-    "out/resume_test/cmp_A_A2.json"
+    "out/resume_test/cmp_A_C.err",
+    "out/resume_test/cmp_A_A2.json",
+    "out/resume_test/cmp_A_A2.err",
+    "out/resume_test/A/work/order_log.jsonl",
+    "out/resume_test/A/work/train_log.jsonl",
+    "out/resume_test/A2/work/order_log.jsonl",
+    "out/resume_test/A2/work/train_log.jsonl",
+    "out/resume_test/B/work/order_log.jsonl",
+    "out/resume_test/B/work/train_log.jsonl",
+    "out/resume_test/C/work/order_log.jsonl",
+    "out/resume_test/C/work/train_log.jsonl",
+    "out/resume_test/A/calibration.json",
+    "out/resume_test/A2/calibration.json",
+    "out/resume_test/B/calibration.json",
+    "out/resume_test/C/calibration.json",
+    "out/resume_test/TF/calibration.json",
+    "out/resume_test/TM/calibration.json",
+    "out/resume_test/timing.json",
+    "out/resume_test/attn_choice.txt"
+   ],
+   "stop_on_fail": true,
+   "restore": [
+    "out/resume_test/attn_choice.txt"
+   ]
+  },
+  {
+   "name": "rand_any",
+   "needs": [
+    "smoke"
+   ],
+   "stall": 900,
+   "resume": true,
+   "pre_uploads": [
+    [
+     "{work}/stage/rand_any.tgz",
+     "/content/proj/rand_any.tgz"
+    ]
+   ],
+   "pre_big_uploads": [
+    [
+     "{repo}/monitor/laya-monitor/model.safetensors",
+     "/content/proj/monitor/laya-monitor/model.safetensors"
+    ],
+    [
+     "{work}/stage/run1_model.safetensors",
+     "/content/proj/monitor/run1/model.safetensors"
+    ]
+   ],
+   "cmds": [
+    [
+     "tar xzf rand_any.tgz && python scripts/attack.py --model monitor/laya-monitor --calib monitor/calibration.json --data data/train_pool.jsonl --scores compute --n 200 --budget 20 --scope all --random_baseline --target_ids inputs/any_u_val_ids.json --max_minutes 60 --resume --out out/rand_any/val_all_random.jsonl && python scripts/aaai27/random_any_control.py render out/rand_any/val_all_random.jsonl out/rand_any/texts.jsonl --model_dir monitor/laya-monitor && python scripts/aaai27/score_texts.py --model monitor/laya-monitor --texts out/rand_any/texts.jsonl --out out/rand_any/scores_laya-monitor.jsonl && python scripts/aaai27/score_texts.py --model base --texts out/rand_any/texts.jsonl --out out/rand_any/scores_base.jsonl && python scripts/aaai27/score_texts.py --model monitor/run1 --texts out/rand_any/texts.jsonl --out out/rand_any/scores_run1.jsonl",
+     "out/rand_any/rand_any.log"
+    ]
+   ],
+   "outputs": [
+    "out/rand_any/val_all_random.jsonl",
+    "out/rand_any/texts.jsonl",
+    "out/rand_any/scores_laya-monitor.jsonl",
+    "out/rand_any/scores_base.jsonl",
+    "out/rand_any/scores_run1.jsonl"
    ]
   },
   {
@@ -42,7 +110,7 @@
    "stall": 600,
    "cmds": [
     [
-     "( [ -f monitor/seed1/calibration.json ] || python scripts/train_monitor.py --epochs 3 --bs 16 --accum 1 --max_minutes 60 --seed 1 --out monitor/seed1 --calib_out monitor/seed1/calibration.json --work_dir runs/seed1 --resume_dir runs/seed1/resume ) && tar czf monitor/seed1_small.tgz -C monitor/seed1 --exclude model.safetensors . && rm -f runs/seed1/resume/state.pt",
+     "[ -s out/resume_test/attn_choice.txt ] || { echo 'missing attn_choice.txt'; exit 3; } ; ATTN=$(grep -q math out/resume_test/attn_choice.txt && echo --attn_math) ; echo attention: $(cat out/resume_test/attn_choice.txt) ; ( [ -f monitor/seed1/calibration.json ] || python scripts/train_monitor.py $ATTN --epochs 3 --bs 16 --accum 1 --max_minutes 60 --seed 1 --out monitor/seed1 --calib_out monitor/seed1/calibration.json --work_dir runs/seed1 --resume_dir runs/seed1/resume ) && tar czf monitor/seed1_small.tgz -C monitor/seed1 --exclude model.safetensors . && rm -f runs/seed1/resume/state.pt",
      "logs/train1.log"
     ]
    ],
@@ -140,7 +208,7 @@
    "stall": 600,
    "cmds": [
     [
-     "( [ -f monitor/seed2/calibration.json ] || python scripts/train_monitor.py --epochs 3 --bs 16 --accum 1 --max_minutes 60 --seed 2 --out monitor/seed2 --calib_out monitor/seed2/calibration.json --work_dir runs/seed2 --resume_dir runs/seed2/resume ) && tar czf monitor/seed2_small.tgz -C monitor/seed2 --exclude model.safetensors . && rm -f runs/seed2/resume/state.pt",
+     "[ -s out/resume_test/attn_choice.txt ] || { echo 'missing attn_choice.txt'; exit 3; } ; ATTN=$(grep -q math out/resume_test/attn_choice.txt && echo --attn_math) ; echo attention: $(cat out/resume_test/attn_choice.txt) ; ( [ -f monitor/seed2/calibration.json ] || python scripts/train_monitor.py $ATTN --epochs 3 --bs 16 --accum 1 --max_minutes 60 --seed 2 --out monitor/seed2 --calib_out monitor/seed2/calibration.json --work_dir runs/seed2 --resume_dir runs/seed2/resume ) && tar czf monitor/seed2_small.tgz -C monitor/seed2 --exclude model.safetensors . && rm -f runs/seed2/resume/state.pt",
      "logs/train2.log"
     ]
    ],

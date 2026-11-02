@@ -21,6 +21,7 @@ for TRY in 1 2 3 4 5 6; do
 done
 [ -z "$EP" ] && { echo "NEWVM_FAIL no US A100 after 6 tries"; exit 1; }
 mkdir -p "$(dirname "$HB_LOG")"
+touch "$COLAB_WORK/lease_$NAME"  # heartbeat.py stops the VM if this goes stale (no supervisor/poller for 30 min)
 PID=$(python3 -c 'import subprocess,sys; print(subprocess.Popen(sys.argv[1:], start_new_session=True, stdin=subprocess.DEVNULL, stdout=open(sys.argv[-1] + ".out", "a"), stderr=subprocess.STDOUT).pid)' \
       python3 "$D/heartbeat.py" "$NAME" "$EP" "$HB_LOG")
 echo "NEWVM_OK $NAME endpoint=$EP heartbeat_pid=$PID"
