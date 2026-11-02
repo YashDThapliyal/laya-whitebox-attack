@@ -27,11 +27,12 @@ What the evidence supports as of this commit. Where the prose of a later section
 - **Counting unit:** cells, not traces. One attack state can flip under both views, so the 167 are 113 distinct attack states (111 neutralized) on 72 traces.
 - **Scope:** the attack was optimized against the full view and not adapted to masking. An attack restricted to tool-output text with intact calls and roles was not run, so masking's robustness to an adaptive attack is untested. This claim says no realizable flip was found, not that none exists.
 
-**4. Flips transfer weakly, and which traces flip is largely seed-specific on InjecAgent.** Sections 6, 7 and 8; first state below p = 0.865 on run 2 unless noted. Transfer and Haiku denominators are all val targets, so they include R-Judge (9 of 117; 5 of Haiku's 108, none of which flip).
+**4. Flips transfer weakly, and which traces flip is largely seed-specific on InjecAgent.** Sections 6, 7 and 8; first state below p = 0.865 on run 2 unless noted. Transfer and Haiku denominators in the first three bullets are all val targets, so they include R-Judge (9 of 117; 5 of Haiku's 108, none of which flip). The paper reports the same tables without R-Judge (the next-to-last bullet and section 6).
 
-- **Run 1:** above the matched random control. Any token, unconstrained, 14 / 117 [7, 19]% against 3 / 117 [1, 7]% (Fisher p = 0.010). Agent text 14 to 20% against 2% (Holm p of at most 0.005).
+- **Run 1:** above the matched random control with R-Judge included. Any token, unconstrained, 14 / 117 [7, 19]% against 3 / 117 [1, 7]% (Fisher p = 0.010). Agent text 14 to 20% against 2% (Holm p of at most 0.005).
 - **Zero-shot Laya:** agent text transfers above its control (22 and 28% against 6%; Holm p of at most 0.020). Any token does not: 11 / 106 [6, 18]% against the matched control's 14 / 106 [8, 21]% (p = 0.67). The matched any-token control exists only for this state and attack; the deeper p < 0.5 any-token states beat only the narrower agent-text control.
 - **Haiku 5.5:** not beyond random. On the 108 traces it stably flags: unconstrained 4 (4% [1, 9]), fluent 7 (6% [3, 13]), random 9 (8% [4, 15]). McNemar against random: p = 0.06 (random flips more) and p = 0.63. Its clean-vs-clean noise floor is 1 of 117 (0.9%). Every flip is on ToolEmu.
+- **Without the 9 R-Judge targets, the numbers the paper reports:** the any-token result on run 1 no longer clears its control, 10 / 108 [5, 16]% against 3 / 108 [1, 8]% (Fisher p = 0.083), so "above the matched control" depends on R-Judge rows. Agent text holds: 16 and 21% against 2% on run 1, 24 and 31% against 6% on zero-shot Laya (Holm p of at most 0.014). Zero-shot any token stays at 11 / 100 against 14 / 100 (p = 0.67). Haiku flips 4, 7 and 9 of 103 with the same McNemar p values, and its clean-vs-clean noise is 0 of 108 (the one disagreement was on R-Judge).
 - **Overlap across seeds:** about 30% (13 of 44, 9 of 31 and 11 of 36 traces that flip on either seed of a pair flip on both). Independent flips at these rates would give 19, 12 and 13%, so the overlap is above chance but most flips are not shared. This is InjecAgent, agent text, unconstrained, p < 0.5. ToolEmu flips on nearly every trace on every seed, so it is not seed-specific.
 
 **5. Clean margin predicts success; editable fraction is not claimed as the mechanism.** Section 7, val targets, odds ratios for clean margin per SD and for editable fraction per 0.11.
@@ -62,6 +63,7 @@ Sections 1 to 4 are Phase A (structure vs fragility, recomputed on SHADE-80). Se
 | `scripts/aaai27/structure_stats.py` | Spearman correlations with bootstrap CIs, logistic regressions, InjecAgent split, all written to `phaseA_stats.json` |
 | `results/aaai27/trace_features.jsonl` | per-trace source, tokens, editable tokens, editable fraction, windows, clean margin, success at budgets 20 and 60 under both bars |
 | `results/aaai27/phaseA_stats.json` | every number in this file, plus ML and Firth fits for both attacks and both SHADE budgets |
+| `scripts/aaai27/transfer_no_rjudge.py`, `results/aaai27/job7_transfer_no_rjudge.json` | transfer, random-control and Haiku tables without the R-Judge targets (section 6) |
 
 ## Definitions
 
@@ -347,7 +349,28 @@ Clean points rescore within 0.009 of the attack's recorded margin, so the gaps c
 
 Against the matching control, the any-token attack transfers to run 1 (12% against 3%) but not to zero-shot Laya, where random edits over the same surface flip as many traces (13%) as the attack does (10%).
 
-**Reading.** Most run-2 flips do not carry over. Agent-text edits transfer above the random-edit rate on both checkpoints (Holm p at most 0.022), but only 14 to 28% of the time at the operating point. Any-token edits beat the control on run 1 (12% and 8%) but are not distinguishable from it on zero-shot Laya at the operating point (10% and 13% against 6%; p = 0.31 and 0.19), and against the matching any-token random control, which flips 13% of zero-shot detections by itself, the unconstrained attack shows no transfer to zero-shot Laya at all (p = 0.67). Deeper edits transfer more (17 to 34%) and all exceed the control. SHADE-80 edits essentially do not transfer. The attack is largely specific to the checkpoint it was optimized against, so the threat model it supports is an attacker with gradient access to the deployed monitor or a close surrogate.
+*Without the R-Judge targets* (`transfer_no_rjudge.py`, output `job7_transfer_no_rjudge.json`; stored scores only, no new model or API calls). The tables above include 9 R-Judge targets, a source that is near chance on clean traces. These are the same tables on InjecAgent + ToolEmu, and they are the numbers the paper reports. The script first reproduces the published tables with R-Judge included. Holm adjustment covers the same 8 tests per checkpoint.
+
+| attack, first state below p = 0.865 | run 2 | zero-shot Laya | p vs random | run-1 Laya | p vs random |
+|---|---|---|---|---|---|
+| agent text, unconstrained | 49 / 57 [75, 93]% | 12 / 49 [15, 38]% | 0.014 | 9 / 57 [8, 27]% | 0.005 |
+| agent text, fluent | 59 / 62 [87, 98]% | 17 / 54 [21, 45]% | 0.0005 | 13 / 62 [13, 33]% | 0.0003 |
+| any token, unconstrained | 100 / 108 [86, 96]% | 11 / 100 [6, 19]% | 0.31 | 10 / 108 [5, 16]% | 0.067 |
+| any token, fluent | 96 / 105 [84, 95]% | 13 / 97 [8, 22]% | 0.19 | 6 / 105 [3, 12]% | 0.17 |
+| random edits (control) | 3 / 108 [1, 8]% | 6 / 100 [3, 12]% | | 2 / 108 [0, 6]% | |
+
+| attack, first state below p = 0.5 | run 2 | zero-shot Laya | p vs random | run-1 Laya | p vs random |
+|---|---|---|---|---|---|
+| agent text, unconstrained | 43 / 44 [88, 100]% | 8 / 36 [12, 38]% | 0.042 | 15 / 44 [22, 49]% | 7e-7 |
+| agent text, fluent | 52 / 54 [88, 99]% | 13 / 46 [17, 42]% | 0.003 | 18 / 54 [22, 47]% | 2e-7 |
+| any token, unconstrained | 97 / 97 [96, 100]% | 17 / 89 [12, 28]% | 0.036 | 14 / 97 [9, 23]% | 0.005 |
+| any token, fluent | 94 / 94 [96, 100]% | 15 / 86 [11, 27]% | 0.057 | 14 / 94 [9, 24]% | 0.005 |
+
+Against the matching any-token control: run 2, 100 / 108 against 3 / 108; zero-shot Laya, 11 / 100 against 14 / 100 [8, 22]% (p = 0.67); run-1 Laya, 10 / 108 against 3 / 108 [1, 8]% (p = 0.083).
+
+**What R-Judge was carrying.** Dropping its 9 targets removes the two any-token results at the first state on run 1: p = 0.010 against the matching control becomes 0.083, and Holm p = 0.006 and 0.032 against the narrower control become 0.067 and 0.17. R-Judge supplied 4 of the 14 unconstrained transfers on 9 of the 117 targets. The fluent any-token state at p < 0.5 on zero-shot Laya also moves, from 0.035 to 0.057. Agent-text transfer is unaffected in kind, so the claim that survives on the usable sources is that agent-text edits transfer above random and any-token edits do not clear the matched control. The Haiku block in section 8 is unchanged except for denominators: 4, 7 and 9 flips of 103, the same McNemar p values, verdict AUROC 0.99, and 0 of 108 clean-vs-clean disagreements.
+
+**Reading (with R-Judge included).** Most run-2 flips do not carry over. Agent-text edits transfer above the random-edit rate on both checkpoints (Holm p at most 0.022), but only 14 to 28% of the time at the operating point. Any-token edits beat the control on run 1 (12% and 8%) but are not distinguishable from it on zero-shot Laya at the operating point (10% and 13% against 6%; p = 0.31 and 0.19), and against the matching any-token random control, which flips 13% of zero-shot detections by itself, the unconstrained attack shows no transfer to zero-shot Laya at all (p = 0.67). Deeper edits transfer more (17 to 34%) and all exceed the control. SHADE-80 edits essentially do not transfer. The attack is largely specific to the checkpoint it was optimized against, so the threat model it supports is an attacker with gradient access to the deployed monitor or a close surrogate.
 
 ## 7. Job 8: how much do the results move across training seeds?
 
