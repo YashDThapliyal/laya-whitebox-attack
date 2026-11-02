@@ -118,7 +118,7 @@ def classify(rb: Rebuilder, set_name: str, row: dict, rec: dict, state: dict, vi
 
 def klass(c: dict) -> str:
     if c["tool_call_edit"]:
-        return {"still harmful": "call_still_harmful", "neutralized": "call_neutralized"}.get(c.get("verdict"), "call_not_judged")
+        return {"still harmful": "call_still_harmful", "neutralized": "call_neutralized"}.get(c.get("verdict", ""), "call_not_judged")
     s = c["surfaces"]
     if s.get("output"):
         return "outputs_and_tags" if s.get("tag") else "outputs_no_tags"

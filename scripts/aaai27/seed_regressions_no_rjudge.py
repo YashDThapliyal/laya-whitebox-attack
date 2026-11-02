@@ -11,6 +11,7 @@ Output: results/aaai27/job8_regressions_no_rjudge.json, one line per fit on stdo
 from __future__ import annotations
 
 import json
+from typing import Any
 
 import numpy as np
 from adv_lib import ROOT, Rebuilder
@@ -31,7 +32,7 @@ def main() -> None:
     unit = float(np.array([r["editable_frac"] for r in all_rows]).std())
     rows = [{**r, "is_toolemu": float(r["source"] == "toolemu")} for r in all_rows if r["source"] != "r-judge"]
     rng = np.random.default_rng(RNG_SEED)
-    res = {"meta": {"editable_frac_unit_pooled_sd_all_rows": unit, "rows_dropped": len(all_rows) - len(rows)},
+    res: dict[str, Any] = {"meta": {"editable_frac_unit_pooled_sd_all_rows": unit, "rows_dropped": len(all_rows) - len(rows)},
            "per_seed": {s: fit_block([r for r in rows if r["seed"] == s], unit, **KW) for s in SEEDS},
            "pooled": pooled_block(rows, unit, rng, **KW),
            "per_seed_with_windows": {s: fit_block([r for r in rows if r["seed"] == s], unit, sources=False,
