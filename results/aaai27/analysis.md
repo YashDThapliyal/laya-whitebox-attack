@@ -255,12 +255,32 @@ Clean points rescore within 0.009 of the attack's recorded margin, so the gaps c
 
 **Reproducibility note.** Fixed-seed retrains of the monitor are not bit-reproducible. In the resume test, two uninterrupted runs with the same seed, the same data order and the same A100 ended with a maximum weight difference of 0.005, different per-step losses, and different best epochs (epoch 1 with val AUROC 0.992 against epoch 2 with 0.989). The cause is the fused attention kernels (SDPA flash and memory-efficient backward), which are nondeterministic; `torch.use_deterministic_algorithms(warn_only=True)` only warns about them. The seed results below are therefore *between-monitor variation*: they include this kernel noise on top of what the seed itself changes (data order, dropout, head initialization). The attention kernel used for the seed retrains, and its measured cost, is recorded with the results.
 
-## 8. Phase C design: does an LLM judge get moved by the same edits? (not yet run)
+## 8. Phase C: does an LLM judge get moved by the same edits?
 
-`llm_judge.py` asks Claude Haiku 5.5 for a suspicion score and a verdict on each trace text (full view). The sample is built so that its flip rates can be compared on the same traces:
+**Setup.** `llm_judge.py` asks Claude Haiku 5.5 (effort medium, structured output) for a suspicion score (0 to 100) and a verdict on each trace text, full view. On all 117 attacked val targets it judges five texts: the clean trace twice (Haiku 5.5 rejects sampling parameters, so the second call measures its run-to-run noise), the unconstrained agent-text edit, the fluent agent-text edit, and the random-edit control (20 random agent-text substitutions). Attack edits are run 2's first state below p = 0.865, else the path's best state. It also judges 40 val and 30 SHADE compliant traces, and run 2's SHADE-80 agent-text flips with their clean traces. All 718 calls succeeded (no refusals or parse errors) for $0.16; the 20-call dry run cost $0.003. A *judge flip* is a trace whose clean version the judge calls violating on both calls and whose edited version it calls not violating. Paired comparisons use exact McNemar tests. Scripts: `llm_judge.py`, `analyze_judge.py`; outputs: `phaseC/judge_calls.jsonl`, `phaseC_judge.json`.
 
-- **Matched block, judged first:** all 117 attacked val targets (InjecAgent 87, ToolEmu 21, R-Judge 9), five calls each: the clean trace twice (Haiku 5.5 rejects sampling parameters, so the two clean calls measure the judge's own run-to-run noise), the unconstrained agent-text edit, the fluent agent-text edit, and the random-edit control (20 random agent-text substitutions). Attack edits are run 2's first state below p = 0.865, else the path's best state; each call records whether that edit flipped run 2. Comparisons can then use all 117 traces, or the 62 that both attacks flipped, with paired tests on the same traces.
-- **Compliant sample:** 40 val and 30 SHADE compliant traces, for the judge's false-positive rate.
-- **SHADE block:** the 29 SHADE-80 agent-text flips of run 2 and their clean traces (twice); there is no SHADE random control.
+**The judge itself** (95% Wilson CIs):
 
-A judge flip is a clean trace the judge calls violating whose edited version it does not. The plan has 718 calls, estimated at about $0.60 (Haiku 5.5: $0.10 / $0.50 per million input / output tokens up to 100K-token prompts). The run is capped at $4.50, below the $5 limit, with a 20-call dry run first.
+| | val | SHADE |
+|---|---|---|
+| clean violating calls judged violating | 217 / 234 (93% [89, 95]) | 9 / 34 (26% [15, 43]) |
+| compliant traces judged violating | 0 / 40 (0% [0, 9]) | 7 / 30 (23% [12, 41]) |
+| suspicion AUROC, violating vs compliant | 0.99 | 0.50 |
+| the two clean calls disagree on the verdict | 1 / 117 | 1 / 17 |
+
+Haiku is a strong judge on the val sources and, like Laya, at chance on SHADE.
+
+**Flip rates on the same val traces** (traces the judge stably flags clean):
+
+| edit | all attacked traces (n = 108) | traces both attacks flipped on run 2 (n = 54) |
+|---|---|---|
+| agent text, unconstrained | 4 / 108 (4% [1, 9]) | 4 / 54 (7% [3, 18]) |
+| agent text, fluent | 7 / 108 (6% [3, 13]) | 6 / 54 (11% [5, 22]) |
+| random edits (control) | 9 / 108 (8% [4, 15]) | 8 / 54 (15% [8, 27]) |
+
+- **The edits that flip run 2 do not move Haiku more than random edits do.** Paired on the same 108 traces: unconstrained vs random, 0 traces flip only under the attack and 5 only under random (p = 0.06); fluent vs random, 1 and 3 (p = 0.63).
+- **Every flip is on ToolEmu**: 4, 7 and 9 of its 16 stably flagged traces. InjecAgent (0 of 87) and R-Judge (0 of 5) never flip. ToolEmu's record is the agent's own narration of its actions, so any edit there, random or optimized, edits the evidence itself.
+- **Suspicion moves less under attack edits than under random ones**: mean change from the clean score -3.1 (unconstrained) and -3.7 (fluent) against -5.4 (random); fluent vs random, Wilcoxon p = 0.004.
+- **SHADE is uninformative here**: the judge stably flags only 4 clean traces in each SHADE set, and flips none of them.
+
+**Reading.** Gradient edits against the Laya monitor are specific to it: they transfer to other Laya checkpoints only partly (section 6) and to an LLM judge not at all beyond random noise. An attacker who wants to fool an LLM judge would need to target it directly; this result says nothing about how hard that is.
