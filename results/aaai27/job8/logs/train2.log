@@ -1,0 +1,26 @@
+attention: fused
+Fetching 15 files:   0%|          | 0/15 [00:00<?, ?it/s]Fetching 15 files: 100%|██████████| 15/15 [00:00<00:00, 1773.04it/s]
+train 1604  val 255  device cuda  head_len 103  state_budget 408
+epoch 0 (zero-shot) val: {'auroc': 0.7374800049218654, 'acc@0.5': 0.6862745098039216, 'nll': 0.6465169642449302, 'auroc_injecagent': 0.7792484504132231, 'auroc_r-judge': 0.44078947368421056, 'auroc_toolemu': 0.7871900826446282}
+ep 1 micro 20 loss 0.4658 lr 2.00e-05 0.1min
+ep 1 micro 40 loss 0.3449 lr 1.97e-05 0.2min
+ep 1 micro 60 loss 0.2859 lr 1.90e-05 0.3min
+ep 1 micro 80 loss 0.2581 lr 1.79e-05 0.4min
+ep 1 micro 100 loss 0.2338 lr 1.64e-05 0.4min
+epoch 1 val: {'auroc': 0.9920942537221608, 'acc@0.5': 0.9529411764705882, 'nll': 0.17472124495645278, 'auroc_injecagent': 1.0, 'auroc_r-judge': 0.7384868421052632, 'auroc_toolemu': 1.0, 'train_loss': 0.23153439989860405}
+saved state ep 2 next_i 0 micro 101
+ep 2 micro 120 loss 0.0981 lr 1.46e-05 1.0min
+ep 2 micro 140 loss 0.0723 lr 1.26e-05 1.1min
+ep 2 micro 160 loss 0.0738 lr 1.06e-05 1.2min
+ep 2 micro 180 loss 0.0578 lr 8.47e-06 1.3min
+ep 2 micro 200 loss 0.0551 lr 6.49e-06 1.3min
+epoch 2 val: {'auroc': 0.992494155284853, 'acc@0.5': 0.9450980392156862, 'nll': 0.2982157835347059, 'auroc_injecagent': 0.9997417355371901, 'auroc_r-judge': 0.792763157894737, 'auroc_toolemu': 1.0, 'train_loss': 0.054023343225230974}
+saved state ep 3 next_i 0 micro 202
+ep 3 micro 220 loss 0.0495 lr 4.71e-06 1.8min
+ep 3 micro 240 loss 0.0341 lr 3.20e-06 1.9min
+ep 3 micro 260 loss 0.0331 lr 2.05e-06 2.0min
+ep 3 micro 280 loss 0.0287 lr 1.30e-06 2.1min
+ep 3 micro 300 loss 0.0320 lr 1.01e-06 2.2min
+epoch 3 val: {'auroc': 0.9937553832902671, 'acc@0.5': 0.9647058823529412, 'nll': 0.19226070657351324, 'auroc_injecagent': 1.0, 'auroc_r-judge': 0.8026315789473684, 'auroc_toolemu': 1.0, 'train_loss': 0.031062773311793652}
+saved state ep 4 next_i 0 micro 303
+saved monitor/seed2 {'best_epoch': 3, 'val_auroc': 0.9937553832902671, 'temperature': 2.559553176647817, 'threshold': 0.8253999948501587, 'val_f1_at_thr': 0.9731800766283525, 'val_acc_at_thr': 0.9725490196078431, 'val_majority_baseline': 0.5058823529411764, 'minutes': 2.6357311367988587, 'attn': 'fused', 'train_loop_seconds': 87.39347720146179, 'train_loop_steps': 303, 'args': {'epochs': 3, 'bs': 16, 'accum': 1, 'lr_enc': 2e-05, 'lr_head': 0.0001, 'max_minutes': 60.0, 'max_steps': 0, 'out': 'monitor/seed2', 'ckpt_every': 100, 'grad_ckpt': False, 'seed': 2, 'calib_out': 'monitor/seed2/calibration.json', 'work_dir': 'runs/seed2', 'resume_dir': 'runs/seed2/resume', 'ckpt_minutes': 5.0, 'ckpt_steps': 0, 'crash_at_step': 0, 'deterministic': False, 'attn_math': False}}

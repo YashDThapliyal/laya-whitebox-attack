@@ -1,13 +1,25 @@
 {
- "done": [],
+ "done": [
+  "smoke",
+  "rand_any",
+  "train1",
+  "evals1",
+  "atk1_val_agent",
+  "atk1_f_val_agent",
+  "atk1_val_all",
+  "train2",
+  "evals2",
+  "atk2_val_agent",
+  "atk2_f_val_agent",
+  "atk2_val_all"
+ ],
  "skipped": {},
- "fails": {
-  "smoke": 1
- },
+ "fails": {},
  "reclaims": 0,
  "vms": [
   "laya81",
-  "laya82"
+  "laya82",
+  "laya83"
  ],
  "vm": null,
  "vm_ready": false

@@ -1,0 +1,8 @@
+HB epoch 1 val: {'auroc': 0.9920942537221608, 'acc@0.5': 0.95294117647058
+HB saved state ep 3 next_i 0 micro 202
+== logs/train2.log
+ep 3 micro 300 loss 0.0320 lr 1.01e-06 2.2min
+epoch 3 val: {'auroc': 0.9937553832902671, 'acc@0.5': 0.9647058823529412, 'nll': 0.19226070657351324, 'auroc_injecagent': 1.0, 'auroc_r-judge': 0.8026315789473684, 'auroc_toolemu': 1.0, 'train_loss': 0.031062773311793652}
+saved state ep 4 next_i 0 micro 303
+saved monitor/seed2 {'best_epoch': 3, 'val_auroc': 0.9937553832902671, 'temperature': 2.559553176647817, 'threshold': 0.8253999948501587, 'val_f1_at_thr': 0.9731800766283525, 'val_acc_at_thr': 0.9725490196078431, 'val_majority_baseline': 0.5058823529411764, 'minutes': 2.6357311367988587, 'attn': 'fused', 'train_loop_seconds': 87.39347720146179, 'train_loop_steps': 303, 'args': {'epochs': 3, 'bs': 16, 'accum': 1, 'lr_enc': 2e-05, 'lr_head': 0.0001, 'max_minutes': 60.0, 'max_steps': 0, 'out': 'monitor/seed2', 'ckpt_every': 100, 'grad_ckpt': False, 'seed': 2, 'calib_out': 'monitor/seed2/calibration.json', 'work_dir': 'runs/seed2', 'resume_dir': 'runs/seed2/resume', 'ckpt_minutes': 5.0, 'ckpt_steps': 0, 'crash_at_step': 0, 'deterministic': False, 'attn_math': False}}
+JOB_EXIT=0

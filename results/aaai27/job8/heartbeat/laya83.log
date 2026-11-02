@@ -1,0 +1,37 @@
+18:00:23 heartbeat start name=laya83 endpoint=gpu-a100-s-ft-usc1c0-1dgqwicewgv13 interval=240s pid=45697
+18:00:23 KEEPALIVE started pid=45702 (initial)
+18:00:33 HB ok 10.4s | keepalive pid=45702 last_ping=4s ago
+18:04:26 HB ok 3.4s | keepalive pid=45702 last_ping=56s ago
+18:08:25 HB ok 2.6s | keepalive pid=45702 last_ping=53s ago
+18:12:26 HB ok 2.8s | keepalive pid=45702 last_ping=52s ago
+18:16:24 HB ok 1.2s | keepalive pid=45702 last_ping=49s ago
+18:20:24 HB ok 1.0s | keepalive pid=45702 last_ping=48s ago
+18:24:24 HB ok 1.3s | keepalive pid=45702 last_ping=48s ago
+18:28:25 HB ok 2.3s | keepalive pid=45702 last_ping=49s ago
+18:32:32 HB ok 9.2s | keepalive pid=45702 last_ping=55s ago
+18:36:24 HB ok 1.3s | keepalive pid=45702 last_ping=46s ago
+18:40:27 HB ok 4.6s | keepalive pid=45702 last_ping=49s ago
+18:44:24 HB ok 1.0s | keepalive pid=45702 last_ping=45s ago
+18:48:24 HB ok 1.2s | keepalive pid=45702 last_ping=44s ago
+18:52:24 HB ok 1.2s | keepalive pid=45702 last_ping=44s ago
+18:56:24 HB ok 1.2s | keepalive pid=45702 last_ping=44s ago
+19:00:24 HB ok 1.2s | keepalive pid=45702 last_ping=43s ago
+19:04:24 HB ok 1.3s | keepalive pid=45702 last_ping=43s ago
+19:08:24 HB ok 1.0s | keepalive pid=45702 last_ping=42s ago
+19:12:24 HB ok 1.2s | keepalive pid=45702 last_ping=41s ago
+19:16:24 HB ok 1.4s | keepalive pid=45702 last_ping=41s ago
+19:20:24 HB ok 1.4s | keepalive pid=45702 last_ping=40s ago
+19:24:24 HB ok 1.0s | keepalive pid=45702 last_ping=40s ago
+19:28:24 HB ok 1.4s | keepalive pid=45702 last_ping=39s ago
+19:32:24 HB ok 1.3s | keepalive pid=45702 last_ping=39s ago
+19:36:24 HB ok 1.2s | keepalive pid=45702 last_ping=38s ago
+19:40:24 HB ok 1.3s | keepalive pid=45702 last_ping=38s ago
+19:44:24 HB ok 1.3s | keepalive pid=45702 last_ping=37s ago
+19:48:25 HB ok 1.9s | keepalive pid=45702 last_ping=38s ago
+19:52:24 HB ok 1.0s | keepalive pid=45702 last_ping=36s ago
+19:56:24 HB ok 1.5s | keepalive pid=45702 last_ping=36s ago
+20:00:24 HB ok 0.9s | keepalive pid=45702 last_ping=35s ago
+20:04:24 HB ok 1.3s | keepalive pid=45702 last_ping=35s ago
+20:08:24 HB ok 1.1s | keepalive pid=45702 last_ping=34s ago
+20:12:24 session gone, heartbeat exiting
+20:12:24 heartbeat end

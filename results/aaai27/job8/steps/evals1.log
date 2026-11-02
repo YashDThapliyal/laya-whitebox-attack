@@ -1,0 +1,10 @@
+HB 1448 traces -> 47009 windows
+HB 1448 traces -> 47009 windows
+HB 1448 traces -> 47009 windows
+HB 1448 traces -> 47009 windows
+== out/seed1/evals.log
+  "n": 1444,
+  "auroc": 0.6623643812973676
+ }
+}
+JOB_EXIT=0

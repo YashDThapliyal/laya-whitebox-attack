@@ -1,0 +1,8 @@
+HB [64/117] injecagent_dh_0273_v win=1 edit=331 p 0.970->0.966 swaps=20 o
+HB device cuda  model base  pending 117
+== out/rand_any/rand_any.log
+device cuda  model monitor/run1  pending 117
+64/117 texts  85 windows  83.7 win/s  0.0 min
+117/117 texts  172 windows  102.6 win/s  0.0 min
+done
+JOB_EXIT=0

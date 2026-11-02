@@ -275,9 +275,76 @@ Against the matching control, the any-token attack transfers to run 1 (12% again
 
 **Reading.** Most run-2 flips do not carry over. Agent-text edits transfer above the random-edit rate on both checkpoints (Holm p at most 0.022), but only 14 to 28% of the time at the operating point. Any-token edits beat the control on run 1 (12% and 8%) but are not distinguishable from it on zero-shot Laya at the operating point (10% and 13% against 6%; p = 0.31 and 0.19), and against the matching any-token random control, which flips 13% of zero-shot detections by itself, the unconstrained attack shows no transfer to zero-shot Laya at all (p = 0.67). Deeper edits transfer more (17 to 34%) and all exceed the control. SHADE-80 edits essentially do not transfer. The attack is largely specific to the checkpoint it was optimized against, so the threat model it supports is an attacker with gradient access to the deployed monitor or a close surrogate.
 
-## 7. Job 8: seed variance (in progress)
+## 7. Job 8: how much do the results move across training seeds?
 
 **Reproducibility note.** Fixed-seed retrains of the monitor are not bit-reproducible. In the resume test, two uninterrupted runs with the same seed, the same data order and the same A100 ended with a maximum weight difference of 0.005, different per-step losses, and different best epochs (epoch 1 with val AUROC 0.992 against epoch 2 with 0.989). The cause is the fused attention kernels (SDPA flash and memory-efficient backward), which are nondeterministic; `torch.use_deterministic_algorithms(warn_only=True)` only warns about them. The seed results below are therefore *between-monitor variation*: they include this kernel noise on top of what the seed itself changes (data order, dropout, head initialization). **Resume test and kernel choice.** With deterministic algorithms and the math attention kernel, two uninterrupted runs (130 steps, seed 1) were identical: every logged training loss, the best epoch, the validation AUROC per source, the temperature and the threshold. This confirms the fused attention kernels as the source of the noise above. Runs hard-killed at step 115 (resumed from the end-of-epoch-1 checkpoint) and at step 125 (resumed mid-epoch from step 120) saw exactly the same batches in the same order over all 130 steps and matched the uninterrupted run on every one of those quantities (`job8/out/resume_test/`, `gate_local.txt`). The math kernel trained at 0.507 s per step against 0.272 s for the fused kernels, 1.86 times slower, above the 1.5 times limit, so the seed retrains use the fused kernels (`timing.json`; each seed's calibration file records `attn`). The resume test ran with deterministic attention and the seed retrains run with fused attention, so "bit-identical" describes the resume test only, not the seed runs: the seed retrains are not bit-reproducible, and the note above applies to them.
+
+**Setup.** Seeds 1 and 2 were retrained with run 2's arguments (3 epochs, batch size 16; the recorded arguments differ only in seed and output paths), then evaluated and re-attacked on the val targets each one flags, budget 20, with all three attacks. Run 2 is seed 0. Attack runs went down to min(0.5, the seed's threshold), so success at p < 0.5 can be read off every seed's paths; run 2's p < 0.5 numbers come from its threshold-0.5 runs, and no fluent run exists there. Success is token level, as in the README table. Brackets are 95% Wilson CIs. Script: `analyze_seeds.py`; output: `job8_seeds.json`; records: `job8/out/seed{1,2}/`. Weights are not committed (`job8/models/`, gitignored).
+
+**The monitors** (each at its own threshold):
+
+| seed | threshold | best epoch | val AUROC: InjecAgent / ToolEmu / R-Judge | SHADE AUROC | SHADE false-positive rate |
+|---|---|---|---|---|---|
+| 0 (run 2) | 0.865 | 3 | 1.000 / 1.000 / 0.523 | 0.577 | 0.92 |
+| 1 | 0.368 | 2 | 1.000 / 1.000 / 0.720 | 0.486 | 0.99 |
+| 2 | 0.825 | 3 | 1.000 / 1.000 / 0.625 | 0.541 | 0.99 |
+
+The source-level picture is stable: perfect on InjecAgent and ToolEmu, weak on R-Judge, near chance on SHADE. The calibrated threshold is not: it ranges from 0.37 to 0.87. Because of that, success at each seed's own threshold is not a like-for-like comparison, so p < 0.5 is the primary bar below.
+
+**Attack success at the common bar, p < 0.5:**
+
+| attack | source | seed 0 | seed 1 | seed 2 |
+|---|---|---|---|---|
+| agent text, unconstrained | InjecAgent | 25 / 87 [20, 39]% | 32 / 87 [27, 47]% | 15 / 87 [11, 27]% |
+| | ToolEmu | 19 / 21 [71, 97]% | 20 / 22 [72, 97]% | 20 / 22 [72, 97]% |
+| | R-Judge | 4 / 9 [19, 73]% | 14 / 19 [51, 88]% | 10 / 18 [34, 75]% |
+| agent text, fluent | InjecAgent | no run | 36 / 87 [32, 52]% | 15 / 87 [11, 27]% |
+| | ToolEmu | no run | 21 / 22 [78, 99]% | 20 / 22 [72, 97]% |
+| | R-Judge | no run | 16 / 19 [62, 94]% | 11 / 18 [39, 80]% |
+| any token, unconstrained | InjecAgent | 79 / 87 [83, 95]% | 80 / 87 [84, 96]% | 66 / 87 [66, 84]% |
+| | ToolEmu | 18 / 21 [65, 95]% | 22 / 22 [85, 100]% | 22 / 22 [85, 100]% |
+| | R-Judge | 9 / 9 [70, 100]% | 19 / 19 [83, 100]% | 16 / 18 [67, 97]% |
+
+R-Judge targets differ a lot across seeds (9, 19 and 18) because each seed flags different traces, and that source is close to chance on clean traces.
+
+**At each seed's own threshold** (bars differ, so for reference only):
+
+| attack | source | seed 0 (0.865) | seed 1 (0.368) | seed 2 (0.825) |
+|---|---|---|---|---|
+| agent text, unconstrained | InjecAgent | 38 / 87 [34, 54]% | 31 / 88 [26, 46]% | 16 / 87 [12, 28]% |
+| | ToolEmu | 19 / 21 [71, 97]% | 20 / 22 [72, 97]% | 22 / 22 [85, 100]% |
+| | R-Judge | 8 / 9 [56, 98]% | 14 / 19 [51, 88]% | 12 / 18 [44, 84]% |
+| agent text, fluent | InjecAgent | 41 / 87 [37, 58]% | 35 / 88 [30, 50]% | 20 / 87 [15, 33]% |
+| any token, unconstrained | InjecAgent | 87 / 87 [96, 100]% | 81 / 88 [84, 96]% | 67 / 87 [67, 85]% |
+
+**Does the structural result replicate?** InjecAgent direct harm (one frozen attacker call) against data stealing (two frozen calls), agent text, unconstrained, p < 0.5:
+
+| seed | direct harm | data stealing |
+|---|---|---|
+| 0 | 24 / 42 [42, 71]% | 1 / 45 [0, 12]% |
+| 1 | 23 / 42 [40, 69]% | 9 / 45 [11, 34]% |
+| 2 | 14 / 42 [21, 48]% | 1 / 45 [0, 12]% |
+
+**Is the same trace fragile on every seed?** Often not. Paired on the 87 InjecAgent targets all three seeds share (exact McNemar, agent text, unconstrained, p < 0.5, unadjusted across the 9 source-by-pair tests):
+
+| pair | both flip | only the first | only the second | p |
+|---|---|---|---|---|
+| seed 0 vs 1 | 13 | 12 | 19 | 0.28 |
+| seed 0 vs 2 | 9 | 16 | 6 | 0.052 |
+| seed 1 vs 2 | 11 | 21 | 4 | 0.0009 |
+
+Roughly 30% of the traces that flip on either seed of a pair flip on both. On ToolEmu and R-Judge no pair differs (p of at least 0.25).
+
+**Text-level check.** The attack's own re-tokenized check, at the bar each run went to (0.5 for seeds 0 and 2, 0.368 for seed 1), agent text, unconstrained, for seeds 0 / 1 / 2: InjecAgent 23/87, 25/87, 13/87; ToolEmu 19/21, 17/22, 18/22; R-Judge 2/9, 13/19, 6/18.
+
+**Reading.**
+
+- **The ordering replicates.** On every seed, agent-text edits flip ToolEmu (where the agent's narration is the record) about 90% of the time and InjecAgent 17 to 37%, and direct-harm traces flip far more often than data-stealing ones. This is the paper's structural claim, on three monitors.
+- **The magnitude does not pin down.** Three monitors with the same config and clean AUROC 1.000 on InjecAgent flip 17%, 29% and 37% of its traces at the same bar, and seeds 1 and 2 differ significantly. Run 2's single-monitor InjecAgent rates should be reported with this spread, as between-monitor variation that includes the kernel noise noted above.
+- **Per-trace fragility is partly a property of the monitor, not only of the trace.** Most InjecAgent flips are not shared between two seeds. This limits any per-trace explanation drawn from one checkpoint, including the margin and editable-fraction regressions in section 2, which rest on run 2 alone.
+- **Three monitors is few.** These ranges describe these three retrains. They are not a confidence interval over seeds.
+
+**Run notes.** Seeds 1 and 2 trained in 2.5 and 2.6 minutes with fused attention, as against 1.7 for run 2; the software environment of run 2's original training was not compared. The 11 steps after the resume test completed on one VM (129 minutes, a heartbeat every 4 minutes, no failed beats, no reclaims). The smoke step's short chain (a 10-step training, then small attacks including a `--resume` pass) never ran: the first attempts stopped at the resume gate, and the step was then marked done from the resume test. The full runs completed without it, but `attack.py --resume` was not exercised in this job.
 
 ## 8. Phase C: does an LLM judge get moved by the same edits?
 

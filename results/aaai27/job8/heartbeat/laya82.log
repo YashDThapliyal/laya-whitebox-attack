@@ -5,3 +5,5 @@
 17:43:46 HB ok 1.1s | keepalive pid=10123 last_ping=59s ago
 17:47:46 HB ok 0.9s | keepalive pid=10123 last_ping=59s ago
 17:51:46 HB ok 1.0s | keepalive pid=10123 last_ping=58s ago
+17:55:58 session gone, heartbeat exiting
+17:55:58 heartbeat end

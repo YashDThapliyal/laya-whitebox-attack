@@ -8,7 +8,10 @@ Per seed:
 Targets at a bar are the violating val traces the seed flags at that bar (p >= bar on the clean trace); success
 means the attack path's margin drops below the bar within 20 swaps. Job-8 attacks ran to min(0.5, threshold), so
 both bars are read off the same paths. Run 2's 0.5-bar numbers come from its t05_* runs (no fluent run exists there).
-Success is the attack's recorded success (token level), as in the README table.
+Success is the attack's recorded success (token level), as in the README table; text_level also reports the attack's
+own re-tokenized check at the bar each attack ran to (0.5 for run 2's t05 run and seed 2, 0.368 for seed 1).
+comparison: at the common bar p < 0.5, agent-text unconstrained, per source: exact McNemar tests between seeds on their
+shared targets, and the InjecAgent direct-harm vs data-stealing split per seed (the structural result of section 3).
 
 Output: results/aaai27/job8_seeds.json and a markdown table on stdout.
 """
@@ -16,9 +19,11 @@ from __future__ import annotations
 
 import json
 import math
+from functools import partial
 from pathlib import Path
 
 import numpy as np
+from scipy.stats import binomtest
 from sklearn.metrics import roc_auc_score
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -101,6 +106,52 @@ def attack_metrics(seed: int, paths: dict, z_thr: float) -> dict:
     return out
 
 
+def attack_cell(attack: dict, name: str, bar: str) -> str:
+    blk = (attack.get(name) or {}).get(bar)
+    return " / ".join(f"{blk[s]['success']}/{blk[s]['n']}" for s in VAL_SOURCES) if blk else "n/a"
+
+
+def half_records(seed: int) -> dict[str, dict]:
+    """Agent-text unconstrained records that reach p < 0.5, keyed by target id, for targets flagged at p >= 0.5."""
+    paths = seed_paths(seed)
+    stem = RUN2_HALF["agent_u"] if seed == 0 else ATTACKS["agent_u"]
+    recs = read_jsonl(paths["attack"] / f"{stem}.jsonl")
+    return {r["id"]: r for r in recs if r["z_hist"][0] >= 0.0}
+
+
+def flipped(r: dict) -> bool:
+    return min(r["z_hist"][:BUDGET + 1]) < 0.0
+
+
+def mcnemar(a: list[bool], b: list[bool]) -> dict:
+    only_a = sum(x and not y for x, y in zip(a, b))
+    only_b = sum(y and not x for x, y in zip(a, b))
+    p = binomtest(only_a, only_a + only_b, 0.5).pvalue if only_a + only_b else 1.0
+    return {"n_shared": len(a), "both": sum(x and y for x, y in zip(a, b)), "only_first": only_a, "only_second": only_b,
+            "p_exact": float(p)}
+
+
+def comparison(seeds: list[int]) -> dict:
+    recs = {s: half_records(s) for s in seeds}
+    pairs = {}
+    for i, a in enumerate(seeds):
+        for b in seeds[i + 1:]:
+            for src in VAL_SOURCES:
+                ids = sorted(k for k in recs[a].keys() & recs[b].keys() if recs[a][k]["task"] == src)
+                pairs[f"{a}_vs_{b}|{src}"] = mcnemar([flipped(recs[a][k]) for k in ids], [flipped(recs[b][k]) for k in ids])
+    split, text = {}, {}
+    for s in seeds:
+        for kind, tag in (("direct_harm", "_dh_"), ("data_stealing", "_ds_")):
+            rs = [r for k, r in recs[s].items() if tag in k and r["task"] == "injecagent"]
+            k = sum(flipped(r) for r in rs)
+            split.setdefault(str(s), {})[kind] = {"k": k, "n": len(rs), "ci95": wilson(k, len(rs))}
+        for src in VAL_SOURCES:
+            rs = [r for r in recs[s].values() if r["task"] == src]
+            k = sum(bool(r["success_retokenized"]) for r in rs)
+            text.setdefault(str(s), {})[src] = {"k": k, "n": len(rs), "ci95": wilson(k, len(rs))}
+    return {"pairwise_mcnemar_p05": pairs, "injecagent_split_p05": split, "text_level_at_attack_bar": text}
+
+
 def main() -> None:
     labels = val_labels()
     res = {}
@@ -120,14 +171,14 @@ def main() -> None:
     print("|---|---|---|---|---|---|---|---|---|")
     for seed, r in res.items():
         c, a = r["clean"], r["attack"]
-
-        def cell(name: str, bar: str) -> str:
-            blk = (a.get(name) or {}).get(bar)
-            return " / ".join(f"{blk[s]['success']}/{blk[s]['n']}" for s in VAL_SOURCES) if blk else "n/a"
+        cell = partial(attack_cell, a)
         print(f"| {seed} | {r['calibration']['threshold']:.3f} | "
               + " / ".join(f"{c[s]['auroc']:.3f}" for s in VAL_SOURCES)
               + f" | {c['shade-arena']['auroc']:.3f} | {c['shade-arena']['fpr']:.2f} | {cell('agent_u', 'op')} | "
               f"{cell('agent_c', 'op')} | {cell('any_u', 'op')} | {cell('agent_u', 'half')} |")
+    res["comparison"] = comparison([int(x) for x in res])
+    OUT.write_text(json.dumps(res, indent=1))
+    print(json.dumps(res["comparison"], indent=1))
     print(f"wrote {OUT.relative_to(ROOT)}")
 
 
