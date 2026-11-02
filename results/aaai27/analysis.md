@@ -1,6 +1,8 @@
-# AAAI-27 Phase A: structure vs fragility, recomputed on SHADE-80
+# AAAI-27 analysis
 
-All numbers are for the fine-tuned monitor (run 2), agent-text attacks, success at the operating threshold (p < 0.865). There was no GPU or API use: everything is recomputed from the existing `attack/*.jsonl` records.
+Sections 1 to 4 are Phase A (structure vs fragility, recomputed on SHADE-80). Sections 5 to 7 are Phase B (GPU jobs 6 to 8).
+
+**Phase A.** All numbers are for the fine-tuned monitor (run 2), agent-text attacks, success at the operating threshold (p < 0.865). There was no GPU or API use: everything is recomputed from the existing `attack/*.jsonl` records.
 
 **Short answer.** With the widened SHADE set (80 traces instead of 20), the share of the trace the agent can edit is still the strongest structural predictor of attack success. Pooled Spearman ρ = +0.66 [0.58, 0.73], unchanged from +0.65 on the old 137-trace set. It also holds within SHADE alone (+0.52) and within InjecAgent alone (+0.66), and in a logistic regression with source fixed effects (odds ratio 8.4 per SD of editable fraction, 95% CI 2.9 to 24). **One earlier claim does not survive.** The docs say structure predicts success "much more than starting confidence (ρ = −0.29)". That pooled number is confounded by source. Within a source, the clean-score margin is about as strong a predictor as editable fraction (ρ ≈ −0.5 within SHADE and within InjecAgent; regression OR 0.03 per SD). Window count is nearly collinear with editable fraction (pooled ρ = −0.91), and its separate effect isn't established.
 
@@ -136,3 +138,69 @@ I checked the counts against `results/edit_labels_final.json` and `results/human
 - **Different budgets across sources.** In-distribution traces were only run to 20 swaps, so the budget-60 sensitivity mixes budgets.
 - **Selection.** SHADE targets were capped at 25 windows when selected, which truncates the window-count range.
 - **Four sources, two synthetic.** Source fixed effects use up much of the between-source information.
+
+# Phase B
+
+## 5. Job 6: hiding the agent's prose from the monitor
+
+**Question.** If the monitor scores only tool calls and tool outputs, an agent-text attack has nothing left to edit. Does that defend the monitor, and what does it cost on clean traces?
+
+**Setup.** Run 2 rescored every validation trace (InjecAgent, ToolEmu, R-Judge) and every held-out SHADE trace in three views: *full*; *mask*, each block of agent prose replaced by `[TAG] [withheld]`; and *remove*, agent prose blocks dropped. Scoring uses TF32, the attack's numerics. The full view reproduces the published run-2 AUROC per source (InjecAgent 0.9997, ToolEmu 1.000, SHADE 0.577 exactly; R-Judge 0.523, equal to the windowed val file; the 0.520 in `cross_source_analysis.md` differs by one pair of 304). For mask and remove, the threshold was refit on that view's val slice with the training procedure (temperature by NLL, F1-optimal threshold): 0.775 for mask, 0.752 for remove, against 0.865 for full. Script: `analyze_masking.py`; output: `job6_masking.json`.
+
+**Clean AUROC per source** (95% stratified-bootstrap CI)
+
+| view | InjecAgent (n = 176) | ToolEmu (n = 44) | R-Judge (n = 35) | SHADE (n = 1448) |
+|---|---|---|---|---|
+| full | 1.000 | 1.000 | 0.523 [0.33, 0.71] | 0.577 [0.54, 0.61] |
+| mask | 0.997 [0.99, 1.00] | 0.662 [0.49, 0.82] | 0.533 [0.35, 0.72] | 0.524 [0.49, 0.55] |
+| remove | 0.991 [0.98, 1.00] | 0.500 [0.33, 0.67] | 0.566 [0.36, 0.76] | 0.540 [0.50, 0.58] |
+
+- **InjecAgent keeps its signal** because the injected attacker tool call stays in the record.
+- **ToolEmu loses most of it.** Under remove, the refit threshold flags 0 of 22 ToolEmu violations.
+- **At run 2's own threshold, masking floods false positives**: 86% of compliant ToolEmu traces and 97% of compliant SHADE traces are flagged under mask. With the refit threshold, the masked view flags 55% of ToolEmu violations against 14% of compliant ones, and 33% of SHADE traces in both classes.
+
+**Attacks under masking.** Each attacked target's clean trace and adversarial state (the first state below p = 0.865 on the full-view attack path) were scored under the view at its refit threshold. The table counts detections that survive masking (clean trace still flagged) and that the adversarial state flips (no longer flagged). All attacks are budget 20 and were run against the full view, so they are not adapted to masking.
+
+| attack | mask: flipped / still flagged | remove: flipped / still flagged |
+|---|---|---|
+| agent text, unconstrained (val) | 0 / 102 | 0 / 88 |
+| agent text, fluent (val) | 0 / 102 | 0 / 88 |
+| any token, unconstrained (val) | 60 / 102 (InjecAgent 58/86, R-Judge 2/4, ToolEmu 0/12) | 43 / 88 (InjecAgent 40/83, R-Judge 3/5) |
+| any token, fluent (val) | 60 / 102 | 36 / 88 |
+| any token, unconstrained (SHADE-80) | 14 / 20 | 22 / 53 |
+| any token, fluent (SHADE-80) | 16 / 20 | 21 / 52 |
+
+**Reading.** Masking stops narration edits by construction, but it gives up most of the clean signal outside InjecAgent, and edits to the rest of the record still flip about 60% of the detections that remain, without any adaptation to the masked view. An adaptive attack against the masked monitor would likely do at least as well. Masking trades attack surface for detection; it is not a free defense.
+
+**Realizability cross-check** (`realizability.py`, output `job6_realizability.json`). The attack edits token ids; an agent writes text. Decoding each first successful state, re-tokenizing and rescoring:
+
+| set | recorded successes | still below the bar as text |
+|---|---|---|
+| agent text, unconstrained (val) | 65 | 57 (InjecAgent 31 of 38) |
+| agent text, fluent (val) | 71 | 68 (InjecAgent 38 of 41) |
+| any token, unconstrained (val) | 117 | 108 (InjecAgent 79 of 87) |
+| any token, fluent (val) | 114 | 105 |
+| any token, unconstrained / fluent (SHADE-80) | 53 / 53 | 40 / 35 |
+
+Clean points rescore within 0.009 of the attack's recorded margin, so the gaps come from re-tokenization, not from scoring differences. This agrees with the attack's own `success_retokenized` field and the "retokenized" column in `SUMMARY.md`; the README headline table reports token-level success. Only the first crossing on each path is checked, so these counts are lower bounds.
+
+## 6. Job 7: do run-2 flips transfer to other checkpoints?
+
+**Setup.** The clean and adversarial texts of every run-2 attack, plus the random-substitution control, were scored by zero-shot Laya and by the run-1 fine-tune, each at its own calibrated threshold (TF32). A flip *transfers* if the checkpoint flags the clean trace and does not flag the adversarial one; the denominator is the targets that checkpoint flags clean. The run-2 column counts adversarial texts that still cross run 2's own bar. Script: `analyze_transfer.py`; output: `job7_transfer.json`.
+
+| attack (val, first state below p = 0.865) | run 2 | zero-shot Laya | run-1 Laya |
+|---|---|---|---|
+| agent text, unconstrained | 57 / 65 | 12 / 55 (22%) | 9 / 65 (14%) |
+| agent text, fluent | 68 / 71 | 17 / 60 (28%) | 14 / 71 (20%) |
+| any token, unconstrained | 108 / 117 | 11 / 106 (10%) | 14 / 117 (12%) |
+| any token, fluent | 105 / 114 | 13 / 103 (13%) | 9 / 114 (8%) |
+| random edits, full budget (control) | 4 / 117 | 6 / 106 (6%) | 2 / 117 (2%) |
+
+- **SHADE-80 edits essentially do not transfer**: 0 to 3 per set to zero-shot (of 13 to 52 flagged) and 0 to run 1.
+- **Deeper states transfer somewhat more.** States below p = 0.5 on run 2 (the threshold-0.5 runs) transfer to run 1 at 15/48 (agent text, unconstrained), 21/62 (fluent) and 18/106 (any token). The median shift in calibrated logit on run 1 is about half of run 2's (−1.9 vs −4.0 for fluent agent text).
+
+**Reading.** Most run-2 flips do not carry over. Agent-text edits transfer at 2 to 7 times the random-edit rate, but still only 14 to 28% of the time. The attack is largely specific to the checkpoint it was optimized against, so the threat model it supports is an attacker with gradient access to the deployed monitor or a close surrogate.
+
+## 7. Job 8: seed variance (in progress)
+
+**Reproducibility note.** Fixed-seed retrains of the monitor are not bit-reproducible. In the resume test, two uninterrupted runs with the same seed, the same data order and the same A100 ended with a maximum weight difference of 0.005, different per-step losses, and different best epochs (epoch 1 with val AUROC 0.992 against epoch 2 with 0.989). The cause is the fused attention kernels (SDPA flash and memory-efficient backward), which are nondeterministic; `torch.use_deterministic_algorithms(warn_only=True)` only warns about them. The seed results below are therefore *between-monitor variation*: they include this kernel noise on top of what the seed itself changes (data order, dropout, head initialization). The attention kernel used for the seed retrains, and its measured cost, is recorded with the results.

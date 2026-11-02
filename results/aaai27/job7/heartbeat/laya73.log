@@ -4,3 +4,5 @@
 15:43:36 HB ok 10.4s | keepalive pid=22324 last_ping=6s ago
 15:47:30 HB ok 4.9s | keepalive pid=22324 last_ping=58s ago
 15:51:30 HB ok 5.1s | keepalive pid=22324 last_ping=57s ago
+15:55:25 session gone, heartbeat exiting
+15:55:25 heartbeat end
