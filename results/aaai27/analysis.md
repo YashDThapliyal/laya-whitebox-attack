@@ -145,32 +145,63 @@ I checked the counts against `results/edit_labels_final.json` and `results/human
 
 **Question.** If the monitor scores only tool calls and tool outputs, an agent-text attack has nothing left to edit. Does that defend the monitor, and what does it cost on clean traces?
 
-**Setup.** Run 2 rescored every validation trace (InjecAgent, ToolEmu, R-Judge) and every held-out SHADE trace in three views: *full*; *mask*, each block of agent prose replaced by `[TAG] [withheld]`; and *remove*, agent prose blocks dropped. Scoring uses TF32, the attack's numerics. The full view reproduces the published run-2 AUROC per source (InjecAgent 0.9997, ToolEmu 1.000, SHADE 0.577 exactly; R-Judge 0.523, equal to the windowed val file; the 0.520 in `cross_source_analysis.md` differs by one pair of 304). For mask and remove, the threshold was refit on that view's val slice with the training procedure (temperature by NLL, F1-optimal threshold): 0.775 for mask, 0.752 for remove, against 0.865 for full. Script: `analyze_masking.py`; output: `job6_masking.json`.
+**What each attack can edit.** Traces are serialized as tagged lines: `[USER]`, `[AGENT PROFILE]` (R-Judge), `[AVAILABLE TOOLKITS]` (ToolEmu), agent prose (`[AGENT THOUGHT]`, `[AGENT]` in SHADE, `[AGENT FINAL ANSWER]` in InjecAgent), tool calls with their arguments (`[AGENT ACTION]`) and tool outputs (`[TOOL OUTPUT]`). ToolEmu pseudo-traces have no tool calls or outputs; their `[AGENT ACTION]` lines narrate what the agent did and count as agent prose.
+
+- **Agent-text attack:** the content of agent-prose lines only (the tags themselves are excluded).
+- **Any-token attack:** every token outside the `[USER]`, `[AGENT PROFILE]` and `[AVAILABLE TOOLKITS]` lines, which are frozen whole, tags included, because the agent did not write them. That covers agent prose, tool calls and their arguments, tool outputs, the tags of those lines and untagged continuation lines.
+- **Both attacks:** on traces longer than one window, the first 96 tokens (the prefix repeated in every window) are frozen. Replacement tokens are plain word pieces (up to 12 letters, optional leading space) or single punctuation marks, never special tokens.
+- **Mask and remove** act on agent-prose blocks: a prose-tagged line plus the untagged lines that follow it. Blocks are located from the original trace's structure by token position, so an attack that edits tag tokens cannot move text out of the mask. Mask replaces each block with `[TAG] [withheld]`; remove drops it.
+- **Left editable under mask or remove:** for the agent-text attack, nothing. For the any-token attack, its surface minus the prose blocks: tool calls, tool outputs and their tags. On ToolEmu nothing is left for either attack, since its traces hold only frozen lines and prose.
+
+Measured on the attacked targets (`phaseB_stats.py`; its re-implementation of the any-token editable set matches the attack records' token counts on all 197 traces):
+
+| source | traces | median share of any-token editable tokens still editable under masking | traces with nothing left editable | any-token edits (up to the first state below p = 0.865) that survive masking |
+|---|---|---|---|---|
+| InjecAgent | 87 | 61% | 0 | 371 / 414 (90%) |
+| ToolEmu | 21 | 0% | 21 | 0 / 101 (0%) |
+| R-Judge | 9 | 48% | 0 | 16 / 16 (100%) |
+| SHADE-80 | 80 | 80% | 0 | 2197 / 2424 (91%) |
+
+Outside ToolEmu, about 90% of the any-token attack's edits were already in tool calls and tool outputs, not in prose, so masking leaves them in place.
+
+**Setup.** Run 2 rescored every validation trace (InjecAgent, ToolEmu, R-Judge) and every held-out SHADE trace in three views: *full*; *mask*; and *remove*. Scoring uses TF32, the attack's numerics. The full view reproduces the published run-2 AUROC per source (InjecAgent 0.9997, ToolEmu 1.000, SHADE 0.577 exactly; R-Judge 0.523, equal to the windowed val file; the 0.520 in `cross_source_analysis.md` differs by one pair of 304). For mask and remove, the threshold was refit on that view's val slice with the training procedure (temperature by NLL, F1-optimal threshold): 0.775 for mask, 0.752 for remove, against 0.865 for full. Scripts: `analyze_masking.py`, `phaseB_stats.py`; outputs: `job6_masking.json`, `phaseB_stats.json`.
 
 **Clean AUROC per source** (95% stratified-bootstrap CI)
 
-| view | InjecAgent (n = 176) | ToolEmu (n = 44) | R-Judge (n = 35) | SHADE (n = 1448) |
+| view | InjecAgent (n = 176) | ToolEmu (n = 44) | R-Judge (n = 35), near chance | SHADE (n = 1448), near chance |
 |---|---|---|---|---|
 | full | 1.000 | 1.000 | 0.523 [0.33, 0.71] | 0.577 [0.54, 0.61] |
 | mask | 0.997 [0.99, 1.00] | 0.662 [0.49, 0.82] | 0.533 [0.35, 0.72] | 0.524 [0.49, 0.55] |
 | remove | 0.991 [0.98, 1.00] | 0.500 [0.33, 0.67] | 0.566 [0.36, 0.76] | 0.540 [0.50, 0.58] |
 
+- **R-Judge and SHADE are near chance on clean traces in every view**, including the full one, so attack counts on them say little about masking. They are reported in a separate table below.
 - **InjecAgent keeps its signal** because the injected attacker tool call stays in the record.
 - **ToolEmu loses most of it.** Under remove, the refit threshold flags 0 of 22 ToolEmu violations.
 - **At run 2's own threshold, masking floods false positives**: 86% of compliant ToolEmu traces and 97% of compliant SHADE traces are flagged under mask. With the refit threshold, the masked view flags 55% of ToolEmu violations against 14% of compliant ones, and 33% of SHADE traces in both classes.
 
-**Attacks under masking.** Each attacked target's clean trace and adversarial state (the first state below p = 0.865 on the full-view attack path) were scored under the view at its refit threshold. The table counts detections that survive masking (clean trace still flagged) and that the adversarial state flips (no longer flagged). All attacks are budget 20 and were run against the full view, so they are not adapted to masking.
+**Attacks under masking.** Each attacked target's clean trace and adversarial state (the first state below p = 0.865 on the full-view attack path) were scored under the view at its refit threshold. Counts are detections that survive masking (clean trace still flagged) and that the adversarial state flips (no longer flagged), with 95% Wilson CIs. All attacks are budget 20 and were run against the full view, so they are not adapted to masking.
+
+*Sources where the clean monitor works (InjecAgent and ToolEmu, pooled):*
 
 | attack | mask: flipped / still flagged | remove: flipped / still flagged |
 |---|---|---|
-| agent text, unconstrained (val) | 0 / 102 | 0 / 88 |
-| agent text, fluent (val) | 0 / 102 | 0 / 88 |
-| any token, unconstrained (val) | 60 / 102 (InjecAgent 58/86, R-Judge 2/4, ToolEmu 0/12) | 43 / 88 (InjecAgent 40/83, R-Judge 3/5) |
-| any token, fluent (val) | 60 / 102 | 36 / 88 |
-| any token, unconstrained (SHADE-80) | 14 / 20 | 22 / 53 |
-| any token, fluent (SHADE-80) | 16 / 20 | 21 / 52 |
+| agent text, unconstrained | 0 / 98 [0, 4]% | 0 / 83 [0, 4]% |
+| agent text, fluent | 0 / 98 [0, 4]% | 0 / 83 [0, 4]% |
+| any token, unconstrained | 58 / 98 [49, 68]% | 40 / 83 [38, 59]% |
+| any token, fluent | 57 / 98 [48, 67]% | 32 / 83 [29, 49]% |
 
-**Reading.** Masking stops narration edits by construction, but it gives up most of the clean signal outside InjecAgent, and edits to the rest of the record still flip about 60% of the detections that remain, without any adaptation to the masked view. An adaptive attack against the masked monitor would likely do at least as well. Masking trades attack surface for detection; it is not a free defense.
+Every flip here is on InjecAgent (58/86 and 57/86 under mask; 40/83 and 32/83 under remove). ToolEmu keeps 12 of its 21 detections under mask and none under remove, and masking leaves nothing editable on it, so its 0/12 is by construction.
+
+*Near-chance sources (R-Judge and SHADE-80):*
+
+| attack | R-Judge, mask | R-Judge, remove | SHADE-80, mask | SHADE-80, remove |
+|---|---|---|---|---|
+| agent text, unconstrained | 0 / 4 [0, 49]% | 0 / 5 [0, 43]% | 0 / 17 [0, 18]% | 0 / 52 [0, 7]% |
+| agent text, fluent | 0 / 4 [0, 49]% | 0 / 5 [0, 43]% | 0 / 17 [0, 18]% | 0 / 52 [0, 7]% |
+| any token, unconstrained | 2 / 4 [15, 85]% | 3 / 5 [23, 88]% | 14 / 20 [48, 86]% | 22 / 53 [29, 55]% |
+| any token, fluent | 3 / 4 [30, 95]% | 4 / 5 [38, 96]% | 16 / 20 [58, 92]% | 21 / 52 [28, 54]% |
+
+**Reading.** Where the clean monitor works, masking stops narration edits by construction, but it gives up most of the clean signal outside InjecAgent, and any-token edits still flip 58 of 98 remaining detections under mask (59% [49, 68]) and 40 of 83 under remove (48% [38, 59]), without any adaptation to the masked view. They survive because 90% of those edits were in tool calls and tool outputs to begin with. An adaptive attack against the masked monitor would likely do at least as well. Masking trades attack surface for detection; it is not a free defense.
 
 **Realizability cross-check** (`realizability.py`, output `job6_realizability.json`). The attack edits token ids; an agent writes text. Decoding each first successful state, re-tokenizing and rescoring:
 
@@ -186,21 +217,50 @@ Clean points rescore within 0.009 of the attack's recorded margin, so the gaps c
 
 ## 6. Job 7: do run-2 flips transfer to other checkpoints?
 
-**Setup.** The clean and adversarial texts of every run-2 attack, plus the random-substitution control, were scored by zero-shot Laya and by the run-1 fine-tune, each at its own calibrated threshold (TF32). A flip *transfers* if the checkpoint flags the clean trace and does not flag the adversarial one; the denominator is the targets that checkpoint flags clean. The run-2 column counts adversarial texts that still cross run 2's own bar. Script: `analyze_transfer.py`; output: `job7_transfer.json`.
+**Setup.** The clean and adversarial texts of every run-2 attack, plus the random-substitution control, were scored by zero-shot Laya and by the run-1 fine-tune, each at its own calibrated threshold (TF32). A flip *transfers* if the checkpoint flags the clean trace and does not flag the adversarial one; the denominator is the targets that checkpoint flags clean. The run-2 column counts adversarial texts that still cross run 2's own bar. Brackets are 95% Wilson CIs. p is a two-sided Fisher exact test of the set's transfer rate against the random-edit control on the same checkpoint, Holm-adjusted across the 8 tests per checkpoint (the four val attacks at each of the two depths). Scripts: `analyze_transfer.py`, `phaseB_stats.py`; outputs: `job7_transfer.json`, `phaseB_stats.json`.
 
-| attack (val, first state below p = 0.865) | run 2 | zero-shot Laya | run-1 Laya |
+*Validation targets, adversarial state = first state below p = 0.865 on run 2:*
+
+| attack | run 2 | zero-shot Laya | p vs random | run-1 Laya | p vs random |
+|---|---|---|---|---|---|
+| agent text, unconstrained | 57 / 65 [78, 94]% | 12 / 55 [13, 34]% | 0.020 | 9 / 65 [8, 24]% | 0.005 |
+| agent text, fluent | 68 / 71 [88, 99]% | 17 / 60 [18, 41]% | 0.0008 | 14 / 71 [12, 30]% | 0.0002 |
+| any token, unconstrained | 108 / 117 [86, 96]% | 11 / 106 [6, 18]% | 0.31 | 14 / 117 [7, 19]% | 0.006 |
+| any token, fluent | 105 / 114 [86, 96]% | 13 / 103 [8, 20]% | 0.19 | 9 / 114 [4, 14]% | 0.032 |
+| random edits (control) | 4 / 117 [1, 8]% | 6 / 106 [3, 12]% | | 2 / 117 [0, 6]% | |
+
+*Validation targets, deeper state = first state below p = 0.5 on run 2* (unconstrained attacks from their dedicated threshold-0.5 runs):
+
+| attack | run 2 | zero-shot Laya | p vs random | run-1 Laya | p vs random |
+|---|---|---|---|---|---|
+| agent text, unconstrained | 47 / 48 [89, 100]% | 9 / 40 [12, 38]% | 0.022 | 15 / 48 [20, 45]% | 9e-7 |
+| agent text, fluent | 60 / 62 [89, 99]% | 15 / 51 [19, 43]% | 0.0008 | 21 / 62 [23, 46]% | 2e-8 |
+| any token, unconstrained | 106 / 106 [96, 100]% | 18 / 95 [12, 28]% | 0.022 | 18 / 106 [11, 25]% | 0.0003 |
+| any token, fluent | 103 / 103 [96, 100]% | 16 / 92 [11, 26]% | 0.035 | 18 / 103 [11, 26]% | 0.0003 |
+
+*SHADE-80 (first state below p = 0.865; there is no SHADE random control):*
+
+| attack | run 2 | zero-shot Laya | run-1 Laya |
 |---|---|---|---|
-| agent text, unconstrained | 57 / 65 | 12 / 55 (22%) | 9 / 65 (14%) |
-| agent text, fluent | 68 / 71 | 17 / 60 (28%) | 14 / 71 (20%) |
-| any token, unconstrained | 108 / 117 | 11 / 106 (10%) | 14 / 117 (12%) |
-| any token, fluent | 105 / 114 | 13 / 103 (13%) | 9 / 114 (8%) |
-| random edits, full budget (control) | 4 / 117 | 6 / 106 (6%) | 2 / 117 (2%) |
+| agent text, unconstrained | 14 / 14 [78, 100]% | 3 / 13 [8, 50]% | 0 / 14 [0, 22]% |
+| agent text, fluent | 14 / 15 [70, 99]% | 0 / 14 [0, 22]% | 0 / 15 [0, 20]% |
+| any token, unconstrained | 40 / 53 [62, 85]% | 1 / 52 [0, 10]% | 0 / 53 [0, 7]% |
+| any token, fluent | 35 / 53 [53, 77]% | 1 / 52 [0, 10]% | 0 / 53 [0, 7]% |
 
-- **SHADE-80 edits essentially do not transfer**: 0 to 3 per set to zero-shot (of 13 to 52 flagged) and 0 to run 1.
-- **Deeper states transfer somewhat more.** States below p = 0.5 on run 2 (the threshold-0.5 runs) transfer to run 1 at 15/48 (agent text, unconstrained), 21/62 (fluent) and 18/106 (any token). The median shift in calibrated logit on run 1 is about half of run 2's (−1.9 vs −4.0 for fluent agent text).
+**Caveats on the control.** The random control is `val_agent_random`: 20 random substitutions in agent text (the full budget), on the same 117 val targets. For the any-token rows it is a narrower-scope baseline, and the attack states often use fewer than 20 edits.
 
-**Reading.** Most run-2 flips do not carry over. Agent-text edits transfer at 2 to 7 times the random-edit rate, but still only 14 to 28% of the time. The attack is largely specific to the checkpoint it was optimized against, so the threat model it supports is an attacker with gradient access to the deployed monitor or a close surrogate.
+**Reading.** Most run-2 flips do not carry over. Agent-text edits transfer above the random-edit rate on both checkpoints (Holm p at most 0.022), but only 14 to 28% of the time at the operating point. Any-token edits beat the control on run 1 (12% and 8%) but are not distinguishable from it on zero-shot Laya at the operating point (10% and 13% against 6%; p = 0.31 and 0.19). Deeper edits transfer more (17 to 34%) and all exceed the control. SHADE-80 edits essentially do not transfer. The attack is largely specific to the checkpoint it was optimized against, so the threat model it supports is an attacker with gradient access to the deployed monitor or a close surrogate.
 
 ## 7. Job 8: seed variance (in progress)
 
 **Reproducibility note.** Fixed-seed retrains of the monitor are not bit-reproducible. In the resume test, two uninterrupted runs with the same seed, the same data order and the same A100 ended with a maximum weight difference of 0.005, different per-step losses, and different best epochs (epoch 1 with val AUROC 0.992 against epoch 2 with 0.989). The cause is the fused attention kernels (SDPA flash and memory-efficient backward), which are nondeterministic; `torch.use_deterministic_algorithms(warn_only=True)` only warns about them. The seed results below are therefore *between-monitor variation*: they include this kernel noise on top of what the seed itself changes (data order, dropout, head initialization). The attention kernel used for the seed retrains, and its measured cost, is recorded with the results.
+
+## 8. Phase C design: does an LLM judge get moved by the same edits? (not yet run)
+
+`llm_judge.py` asks Claude Haiku 5.5 for a suspicion score and a verdict on each trace text (full view). The sample is built so that its flip rates can be compared on the same traces:
+
+- **Matched block, judged first:** all 117 attacked val targets (InjecAgent 87, ToolEmu 21, R-Judge 9), five calls each: the clean trace twice (Haiku 5.5 rejects sampling parameters, so the two clean calls measure the judge's own run-to-run noise), the unconstrained agent-text edit, the fluent agent-text edit, and the random-edit control (20 random agent-text substitutions). Attack edits are run 2's first state below p = 0.865, else the path's best state; each call records whether that edit flipped run 2. Comparisons can then use all 117 traces, or the 62 that both attacks flipped, with paired tests on the same traces.
+- **Compliant sample:** 40 val and 30 SHADE compliant traces, for the judge's false-positive rate.
+- **SHADE block:** the 29 SHADE-80 agent-text flips of run 2 and their clean traces (twice); there is no SHADE random control.
+
+A judge flip is a clean trace the judge calls violating whose edited version it does not. The plan has 718 calls, estimated at about $0.60 (Haiku 5.5: $0.10 / $0.50 per million input / output tokens up to 100K-token prompts). The run is capped at $4.50, below the $5 limit, with a 20-call dry run first.
